@@ -1,0 +1,12 @@
+# macOS system files
+.DS_Store
+
+# Windows system files
+Thumbs.db
+Desktop.ini
+
+
+.dart_tool/
+.packages
+.pub-cache/
+build/
