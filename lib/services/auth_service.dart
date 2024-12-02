@@ -85,10 +85,25 @@ class AuthService{
     try {
       await FirebaseFirestore.instance.collection('userEmails').add({
         'email': email,
-        'createdAt': FieldValue.serverTimestamp(),  // Store the registration timestamp
+        'createdAt': FieldValue.serverTimestamp(), // Store the registration timestamp
+        'streakNumber': 0
       });
     } catch (e) {
       print('Error storing email: $e');
+    }
+  }
+
+  Future<void> addFriend(String email) async{
+    try{
+      final user = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser!.uid);
+
+      await user.update({
+        'listOfFriends': FieldValue.arrayUnion([email]),
+      });
+    }catch(e){
+      print('Error add friends email: $e');
     }
   }
 
@@ -108,6 +123,28 @@ class AuthService{
       return UserModel.fromFirestore(userDoc);
     }
     return null;
+  }
+
+  Future<List<String>> getListFriends() async{
+    final User? user = _firebaseAuth.currentUser;
+    if (user != null) {
+      final DocumentSnapshot userDoc = await _firestore.collection('users').doc(user.uid).get();
+
+      if(userDoc.exists){
+        List<dynamic> listOfFriendsDynamic = userDoc['listOfFriends'] ?? [];
+        List<String> listOfFriends = listOfFriendsDynamic.map((e) => e.toString()).toList();
+        return listOfFriends;
+      }else{
+        print("User document doesn't exist");
+        return [];
+      }
+
+    }else {
+      // If no user is logged in
+      print("No user is logged in");
+      return [];
+    }
+
   }
 
   Future<String?> getUserName() async {

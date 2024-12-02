@@ -5,6 +5,7 @@ class UserModel {
   String password;
   String? name;
   String? schoolName;
+  final List<String>? listOfFriends;
 
   // Constructor
   UserModel({
@@ -12,6 +13,7 @@ class UserModel {
     required this.password,
     this.name,
     this.schoolName,
+    this.listOfFriends
   });
 
   // Convert UserModel to Map (for saving to Firestore)
@@ -20,6 +22,7 @@ class UserModel {
       'email': email,
       'name': name,
       'schoolName': schoolName,
+      'listOfFriends': listOfFriends
     };
   }
 
@@ -30,6 +33,9 @@ class UserModel {
       password: map['password'] as String,
       name: map['name'] as String?,
       schoolName: map['schoolName'] as String?,
+      listOfFriends: map['listOfFriends'] != null
+          ? List<String>.from(map['listOfFriends'])
+          : null,
     );
   }
 
@@ -41,6 +47,9 @@ class UserModel {
       password: data['password'] ?? '',
       name: data['name'],
       schoolName: data['schoolName'],
+      listOfFriends: data['listOfFriends'] != null
+          ? List<String>.from(data['listOfFriends'])
+          : null,
     );
   }
 }

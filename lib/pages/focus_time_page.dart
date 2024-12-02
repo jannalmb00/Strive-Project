@@ -63,7 +63,7 @@ class _FocusTimePageState extends State<FocusTimePage> {
           _remainingTime--;
         } else {
           _stopPomodoro(); // Stop timer when it hits 0
-          _playAlert();
+
           _startBreak();
         }
       });
@@ -92,7 +92,7 @@ class _FocusTimePageState extends State<FocusTimePage> {
         if (_remainingTime > 0) {
           _remainingTime--;
         } else {
-          _playAlert();
+         
           _endBreak(); // End the break when it hits 0
         }
       });
@@ -107,7 +107,7 @@ class _FocusTimePageState extends State<FocusTimePage> {
   }
 
   void _playAlert() async {
-    await _audioPlayer.play(AssetSource('assets/sounds/beep.mp3'));
+    await _audioPlayer.play(AssetSource('sounds/whistle.wav'));
   }
 
   // Format the time in mm:ss
@@ -156,6 +156,7 @@ class _FocusTimePageState extends State<FocusTimePage> {
           child: Text('Reset'),
         ),
         Text(isOnBreak ? "On break" : "Keep Working!"),
+        ElevatedButton(onPressed: _playAlert, child: Text("play alert"))
 
       ],
     );

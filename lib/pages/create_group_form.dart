@@ -11,12 +11,15 @@ class CreateGroupFormPage extends StatefulWidget {
 
 class _CreateGroupFormPageState extends State<CreateGroupFormPage> {
   GroupService groupservice = GroupService();
+  AuthService authService = AuthService();
   late List<String> membersEmail = [];
 
   final TextEditingController groupNameController = TextEditingController();
   final TextEditingController groupDescriptionController = TextEditingController();
   final TextEditingController addFriendController = TextEditingController();
   final TextEditingController fileNameController = TextEditingController();
+
+
 
   Widget _entryField(String title, TextEditingController controller,  {bool isPassword = false}) {
     return TextField(
@@ -39,18 +42,20 @@ class _CreateGroupFormPageState extends State<CreateGroupFormPage> {
     );
   }
 
+
   //widget
   Widget _iconButtonValidator(){
     return IconButton(
       onPressed: () async {
         try {
           //_showSnackBar(context, addFriendController.text);
-          bool result = await groupservice.checkUserEmail(addFriendController.text);
+          int? result = await groupservice.checkUserEmail(addFriendController.text);
           //_showSnackBar(context, result.toString());
-          if (result) {
-            membersEmail.add(addFriendController.text);
-            _showSnackBar(context, "Your friend is found");
-            addFriendController.clear();
+          if (result != null) {// if true
+            membersEmail.add(addFriendController.text);//it will add it to the group
+            await authService.addFriend(addFriendController.text);// add it as my friend
+            _showSnackBar(context, "Your friend is found");//notify the user
+            addFriendController.clear();//clear
 
           } else {
             _showSnackBar(context, "Your friend is nt found");

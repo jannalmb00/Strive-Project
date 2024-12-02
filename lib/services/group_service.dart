@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:strive_project/services/auth_service.dart';
 
 class GroupService{
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
@@ -7,8 +8,12 @@ class GroupService{
 
   User? get currentUser => _firebaseAuth.currentUser;
 
+  AuthService authService = AuthService();
 
-  Future<bool> checkUserEmail(String email) async{
+
+
+
+  Future<int?> checkUserEmail(String email) async{
     try{
       //
       var userFind = await FirebaseFirestore.instance
@@ -16,11 +21,20 @@ class GroupService{
                               .where('email', isEqualTo: email)
                               .get();
 
-      return userFind.docs.isNotEmpty;
+       if(userFind.docs.isNotEmpty){
+         var streakNumber = userFind.docs.first.data()['streakNumber'];
+
+         if (streakNumber is int) {
+           return streakNumber;
+         } else if (streakNumber is String) {
+           return int.tryParse(streakNumber) ?? 0; // Handle String as int
+         }
+      }
+      return null;
 
     } catch (e){
       print('Error checking email: $e');
-      return false;
+      return null;
       }
     }
 
@@ -79,9 +93,6 @@ class GroupService{
       return [];
     }
   }
-
-
-
 
 
 

@@ -64,6 +64,8 @@ class _SingleGroupPageState extends State<SingleGroupPage> {
 
   }
 
+
+
   Widget _segmentedButtonWidget(){
     return SegmentedButton<String>(
       segments: [
