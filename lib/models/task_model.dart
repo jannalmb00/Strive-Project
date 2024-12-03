@@ -35,8 +35,8 @@ class Task {
       id: id,
       title: map['title'],
       priorityLevel: map['priorityLevel'],
-      date: map['date'],
-      time: map['time'],
+      date: map['date'] ?? '',
+      time: map['time'] ?? '',
       description: map['description'],
       status: map['status']
     );

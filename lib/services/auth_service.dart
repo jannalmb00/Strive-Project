@@ -99,9 +99,35 @@ class AuthService{
           .collection('users')
           .doc(currentUser!.uid);
 
+      final userDoc = await user.get();
+      List<dynamic> listOfFriendsDynamic = userDoc['listOfFriends'] ?? [];
+
+      listOfFriendsDynamic.add(email);
+
       await user.update({
-        'listOfFriends': FieldValue.arrayUnion([email]),
+        'listOfFriends': listOfFriendsDynamic,
       });
+    }catch(e){
+      print('Error add friends email: $e');
+    }
+  }
+
+  Future<void> deleteFriend(String email) async{
+    try{
+      final user = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser!.uid);
+
+      final userDoc = await user.get();
+      List<dynamic> listOfFriends = userDoc['listOfFriends'] ?? [];
+
+      if (listOfFriends.contains(email)) {
+        listOfFriends.remove(email); // Remove the first occurrence
+        await user.update({
+          'listOfFriends': listOfFriends,
+          // Update the list of friends with the modified list
+        });
+      }
     }catch(e){
       print('Error add friends email: $e');
     }
@@ -133,7 +159,8 @@ class AuthService{
       if(userDoc.exists){
         List<dynamic> listOfFriendsDynamic = userDoc['listOfFriends'] ?? [];
         List<String> listOfFriends = listOfFriendsDynamic.map((e) => e.toString()).toList();
-        return listOfFriends;
+        List<String> uniqueListOfFriends = listOfFriends.toSet().toList();
+        return uniqueListOfFriends;
       }else{
         print("User document doesn't exist");
         return [];

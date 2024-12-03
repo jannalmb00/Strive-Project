@@ -52,7 +52,10 @@ class _CreateGroupFormPageState extends State<CreateGroupFormPage> {
           int? result = await groupservice.checkUserEmail(addFriendController.text);
           //_showSnackBar(context, result.toString());
           if (result != null) {// if true
-            membersEmail.add(addFriendController.text);//it will add it to the group
+            setState(() {
+              membersEmail.add(addFriendController.text);//it will add it to the groupb
+            });
+
             await authService.addFriend(addFriendController.text);// add it as my friend
             _showSnackBar(context, "Your friend is found");//notify the user
             addFriendController.clear();//clear
@@ -121,8 +124,17 @@ class _CreateGroupFormPageState extends State<CreateGroupFormPage> {
                     }
                   },
                   child: Text('Create')
-              )
-
+              ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: membersEmail.length,
+              itemBuilder: (context, index) {
+                return ListTile(
+                  title: Text(membersEmail[index]),
+                );
+              },
+            ),
+          )
             ],
           ) ,
         ),

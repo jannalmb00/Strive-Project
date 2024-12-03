@@ -74,6 +74,17 @@ class GroupService{
     }
   }
 
+  Future<void> deleteGroup(String groupID) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('groups')
+          .doc(groupID)
+          .delete();
+    } catch (e) {
+      print("Error deleting task: $e");
+    }
+  }
+
 
   Future<List<Map<String, dynamic>>> fetchUserGroups(String userEmail) async {
     try {

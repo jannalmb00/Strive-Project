@@ -24,9 +24,12 @@ class _TaskEventFormState extends State<TaskEventForm> {
   final TextEditingController timePickerController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
 
+  DateTime today = DateTime.now();
+
   DateTime _selectedDay = DateTime.now();
   DateTime _focusedDay = DateTime.now();
   String _priorityLevel = 'Low';
+
 
   final TaskService taskService = TaskService();
 
@@ -199,15 +202,21 @@ class _TaskEventFormState extends State<TaskEventForm> {
               SizedBox(height: 10),
               _dropDown(),
               TableCalendar(
-                firstDay: DateTime.now(),
+                firstDay: _selectedDay,
                 lastDay: DateTime.utc(DateTime.now().year,
                     DateTime.now().month + 1, 0), // Next month
                 focusedDay: _focusedDay,
                 selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
                 onDaySelected: (selectedDay, focusDay) {
+                  // Prevent selecting past dates
+                  if (selectedDay.isBefore(DateTime.now())) {
+                    // Default to today if a past date is selected
+                    selectedDay = DateTime.now();
+                  }
+
                   setState(() {
                     _selectedDay = selectedDay;
-                    _focusedDay = focusDay;
+                    _focusedDay = focusDay.isAfter(DateTime.now()) ? focusDay : DateTime.now(); // Ensure focusedDay is not before today
                   });
                 },
               ),

@@ -16,6 +16,7 @@ class SocialSharePage extends StatefulWidget {
 }
 
 class _SocialSharePageState extends State<SocialSharePage> {
+
   GroupService groupservice = GroupService();
   List<GroupModel> userGroups = [];
   final currentUser = AuthService().currentUser;
@@ -59,6 +60,26 @@ class _SocialSharePageState extends State<SocialSharePage> {
     int? result = await groupservice.checkUserEmail(email);
 
     return result ?? 0;
+  }
+
+  Future<void> deleteGroup(GroupModel group) async{
+    try{
+
+      await groupservice.deleteGroup(group.groupID);
+      var members = group.members;
+
+      for(var member in members){
+        await AuthService().deleteFriend(member);
+
+      }
+
+
+
+      _fetchGroups();
+    }catch(e){
+      print("Error: $e");
+    }
+
   }
 
   Future<List<Map<String, dynamic>>> getFriendsAndStreak() async{
@@ -154,7 +175,7 @@ class _SocialSharePageState extends State<SocialSharePage> {
   Widget _displayGroups() {
     return userGroups.isEmpty
         ? Center(child: Text('No Groups', style: TextStyle(fontSize: 18)))
-        : Flexible(
+        : Expanded(
       child: GridView.builder(
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
@@ -166,8 +187,8 @@ class _SocialSharePageState extends State<SocialSharePage> {
           final group = userGroups[index];
           return GestureDetector(
             onTap: () {
-             Navigator.of(context).
-             push(MaterialPageRoute(builder: (context) => SingleGroupPage(currentGroup: group)));
+              Navigator.of(context).push(MaterialPageRoute(
+                  builder: (context) => SingleGroupPage(currentGroup: group)));
             },
             child: Card(
               elevation: 4,
@@ -176,31 +197,40 @@ class _SocialSharePageState extends State<SocialSharePage> {
               ),
               child: Padding(
                 padding: const EdgeInsets.all(12),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.group, size: 48, color: Colors.blue),
-                    SizedBox(height: 8),
-                    Text(
-                      group.groupName ?? 'Unnamed Group',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    SizedBox(height: 4),
-                    Text( "Members: " +
-                        "Members: ${group.members.join(', ')}",
-                      overflow: TextOverflow.clip,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
+                child:Expanded(
+                    child:  Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.group, size: 40, color: Colors.blue),
+                        SizedBox(height: 8),
+                        Text(
+                          group.groupName ?? 'Unnamed Group',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: 4),
+                        // Text(
+                        //   "Members: ${group.members.join(', ')}",
+                        //   overflow: TextOverflow.clip,
+                        //   style: TextStyle(
+                        //     fontSize: 12,
+                        //     color: Colors.grey[600],
+                        //   ),
+                        //   textAlign: TextAlign.center,
+                        // ),
+                        SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            IconButton(onPressed:(){} , icon: Icon(Icons.edit)),
+                            IconButton(onPressed: () => deleteGroup( group), icon: Icon(Icons.delete)),
+                          ],
+                        )
+                      ],
+                    )),
               ),
             ),
           );
@@ -208,6 +238,7 @@ class _SocialSharePageState extends State<SocialSharePage> {
       ),
     );
   }
+
 
   Widget _displayPersonalStreak(){
     return FutureBuilder<int>(
