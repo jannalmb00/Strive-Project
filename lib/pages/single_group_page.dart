@@ -232,7 +232,7 @@ class _SingleGroupPageState extends State<SingleGroupPage> {
                     onChanged: (bool? val) {
                       setState(() {
                         incompleteTasks[index].status = val ?? false;
-                        taskService.editPersonalTask(incompleteTasks[index]);
+                        taskService.editGroupTask(incompleteTasks[index], widget.currentGroup.groupID);
                       });
                     },
                     fillColor: WidgetStateProperty.all(Colors.white),
@@ -332,8 +332,10 @@ class _SingleGroupPageState extends State<SingleGroupPage> {
           print("no time:");
           return false; // Skip tasks with no time
         }
+        bool priorityMatch = (_selectedPriority == 'All') || (task.priorityLevel == _selectedPriority);
+
         DateTime taskTime = DateTime.parse(task.date!);
-        return taskTime.isBefore(DateTime.now());
+        return taskTime.isBefore(DateTime.now()) && priorityMatch;
       } catch (e) {
         // Skip tasks with invalid date format
         return false;

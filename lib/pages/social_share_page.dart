@@ -116,6 +116,9 @@ class _SocialSharePageState extends State<SocialSharePage> {
               return Center(child: Text('Error: ${snapshot.error}'));
             } else if (snapshot.hasData) {
               List<Map<String, dynamic>> friendsData = snapshot.data!;
+              friendsData.sort((a, b) {
+                return b['streakNumber'].compareTo(a['streakNumber']); // Sort descending
+              });
 
               return Container(
                 padding: EdgeInsets.all(16.0),
@@ -132,9 +135,11 @@ class _SocialSharePageState extends State<SocialSharePage> {
                         children: friendsData.map((friendData) {
                           String email = friendData['email'];
                           int streak = friendData['streakNumber'];
+                          int index = friendsData.indexOf(friendData) + 1;
 
-                          print(email);
-                          print(streak);
+                          //color
+                          Color textColor = email == currentUser?.email ? Colors.redAccent : Colors.indigo;
+
 
                           return Container(
                             margin: EdgeInsets.symmetric(vertical: 8.0),
@@ -147,12 +152,12 @@ class _SocialSharePageState extends State<SocialSharePage> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  email,
-                                  style: TextStyle(color: Colors.indigo, fontSize: 16),
+                                  "${index}. ${email}",
+                                  style: TextStyle(color: textColor, fontSize: 16),
                                 ),
                                 Text(
                                   "Streak: $streak",
-                                  style: TextStyle(color: Colors.indigo, fontSize: 16),
+                                  style: TextStyle(color: textColor, fontSize: 16),
                                 ),
                               ],
                             ),
@@ -225,7 +230,13 @@ class _SocialSharePageState extends State<SocialSharePage> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            IconButton(onPressed:(){} , icon: Icon(Icons.edit)),
+                            IconButton(onPressed:(){
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => CreateGroupFormPage(group: group,),
+                                ),
+                              );
+                            } , icon: Icon(Icons.edit)),
                             IconButton(onPressed: () => deleteGroup( group), icon: Icon(Icons.delete)),
                           ],
                         )
@@ -287,6 +298,7 @@ class _SocialSharePageState extends State<SocialSharePage> {
       ),
     );
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

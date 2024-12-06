@@ -19,7 +19,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final User? user = AuthService().currentUser;
   String? userName;
-  Quote? randomQuote;
+  Map<String, dynamic>? randomQuote;
   Set<String> selected = {'Todo'};
 
   TaskService taskService = TaskService();
@@ -28,12 +28,17 @@ class _HomePageState extends State<HomePage> {
   //for sorting
   String _selectedPriority = 'All';
 
+  bool isLoading = true;
+
   @override
   void initState() {
     super.initState();
     _fetchUserName();
     _fetchRandomQuotes();
     _fetchTask();
+    setState(() {
+
+    });
   }
 
   Future<void> _fetchUserName() async {
@@ -53,9 +58,16 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _fetchRandomQuotes() async{
     QuotesService quotesService = QuotesService();
-    randomQuote = await quotesService.getRandomQoute();
-    setState(() {
 
+    // Fetch the quote from Firebase (if already fetched today) or from the API
+    await quotesService.fetchAndSaveQuote();
+
+    // Get the quote from Firebase
+    randomQuote = await quotesService.getQuoteFromFirebase();
+
+    // Update the UI
+    setState(() {
+      isLoading = false;
     });
 
   }
@@ -183,7 +195,7 @@ class _HomePageState extends State<HomePage> {
         borderRadius: BorderRadius.circular(8.0),
       ),
       child: Text(
-        " \"${randomQuote!.quoteText}\" \n - ${randomQuote!.author}",
+        "\"${randomQuote!['quoteText']}\"\n- ${randomQuote!['author']}",
         textAlign: TextAlign.center,
         style: TextStyle(
           fontSize: 16,
@@ -382,8 +394,10 @@ class _HomePageState extends State<HomePage> {
           print("no time:");
           return false; // Skip tasks with no time
         }
+        bool priorityMatch = (_selectedPriority == 'All') || (task.priorityLevel == _selectedPriority);
+
         DateTime taskTime = DateTime.parse(task.date!);
-        return taskTime.isBefore(DateTime.now());
+        return taskTime.isBefore(DateTime.now()) && priorityMatch;
       } catch (e) {
         // Skip tasks with invalid date format
         return false;

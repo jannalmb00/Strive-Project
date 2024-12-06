@@ -26,12 +26,12 @@ class _WidgetTreeState extends State<WidgetTree> {
             User? user = snapshot.data;
             print("has data: ${snapshot.hasData}");
             print("has data: ${user!.email.toString()}");
-            if (user != null ) {
-             // AuthService().sendVerificationEmail();
-              return ContainerBar();
+
+            if (user != null && !user.emailVerified) {
+              return VerifyUserPage();
             } else {
-              // If the email is verified, show the HomePage
-              return HomePage();
+              // Navigate to the home page after successful verification
+              return ContainerBar();  // Adjust this based on your app structure
             }
           }else{
             return LoginRegisterPage();

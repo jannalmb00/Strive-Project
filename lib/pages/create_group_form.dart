@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 //service
 import 'package:strive_project/services/index.dart';
+//mode;
+import 'package:strive_project/models/index.dart';
 
 class CreateGroupFormPage extends StatefulWidget {
-  const CreateGroupFormPage({super.key});
+  final GroupModel? group;//optiona;
+   CreateGroupFormPage({super.key, this.group});
 
   @override
   State<CreateGroupFormPage> createState() => _CreateGroupFormPageState();
@@ -13,6 +16,19 @@ class _CreateGroupFormPageState extends State<CreateGroupFormPage> {
   GroupService groupservice = GroupService();
   AuthService authService = AuthService();
   late List<String> membersEmail = [];
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    if(widget.group != null){
+      groupNameController.text = widget.group!.groupName;
+      groupDescriptionController.text = widget.group!.groupDescription;
+      fileNameController.text = widget.group!.groupFileName;
+      membersEmail = List<String>.from(widget.group!.members);
+
+    }
+  }
 
   final TextEditingController groupNameController = TextEditingController();
   final TextEditingController groupDescriptionController = TextEditingController();
@@ -42,6 +58,57 @@ class _CreateGroupFormPageState extends State<CreateGroupFormPage> {
     );
   }
 
+  void createGroup() async{
+    if( groupNameController.text.isNotEmpty && groupDescriptionController.text.isNotEmpty && membersEmail.isNotEmpty && fileNameController.text.isNotEmpty){
+      final currentUser = AuthService().currentUser;
+      final userEmail = currentUser?.email ?? 'unknown@example.com';
+      membersEmail.add(userEmail);
+
+      bool result = await groupservice.createGroup(groupNameController.text, groupDescriptionController.text,fileNameController.text, membersEmail);
+
+      if(result){
+        _showSnackBar(context, 'Group is created successfully');
+
+      }else{
+        _showSnackBar(context, 'Error in creating group');
+      }
+
+    }else{
+      _showSnackBar(context, 'You must fill everything and make sure to add user :)');
+    }
+    clearControllers();
+    Navigator.of(context).pop();
+
+  }
+
+  void editGroup() async{
+    if( groupNameController.text.isNotEmpty && groupDescriptionController.text.isNotEmpty && membersEmail.isNotEmpty && fileNameController.text.isNotEmpty){
+      GroupModel editGroup = GroupModel(groupID: widget.group!.groupID, groupName:widget.group!.groupName ,
+          groupDescription: groupDescriptionController.text, groupFileName: widget.group!.groupFileName , members: membersEmail);
+
+     bool result =  await groupservice.editGroup(editGroup);
+     if(result){
+       _showSnackBar(context, "Group is now edited");
+     }else{
+       _showSnackBar(context, "Group is not edited. Sorry");
+     }
+
+    }else{
+      _showSnackBar(context, 'You must fill everything :)');
+    }
+    clearControllers();
+    Navigator.of(context).pop();
+
+  }
+
+  void clearControllers(){
+    groupNameController.clear();
+    groupDescriptionController.clear();
+    fileNameController.clear();
+    membersEmail.clear();
+
+  }
+
 
   //widget
   Widget _iconButtonValidator(){
@@ -57,11 +124,11 @@ class _CreateGroupFormPageState extends State<CreateGroupFormPage> {
             });
 
             await authService.addFriend(addFriendController.text);// add it as my friend
-            _showSnackBar(context, "Your friend is found");//notify the user
+            _showSnackBar(context, "A user is found");//notify the user
             addFriendController.clear();//clear
 
           } else {
-            _showSnackBar(context, "Your friend is nt found");
+            _showSnackBar(context, "User is not found");
             addFriendController.clear();
           }
         } catch (e) {
@@ -100,39 +167,39 @@ class _CreateGroupFormPageState extends State<CreateGroupFormPage> {
               ),SizedBox(height: 20,),
               ElevatedButton(
                   onPressed: () async{
-                    if( groupNameController.text.isNotEmpty && groupDescriptionController.text.isNotEmpty && membersEmail.isNotEmpty){
-                      final currentUser = AuthService().currentUser;
-                      final userEmail = currentUser?.email ?? 'unknown@example.com';
-                      membersEmail.add(userEmail);
 
-                      bool result = await groupservice.createGroup(groupNameController.text, groupDescriptionController.text,fileNameController.text, membersEmail);
-
-                      if(result){
-                        _showSnackBar(context, 'Group is created successfully');
-
-                      }else{
-                        _showSnackBar(context, 'Error in creating group');
-                      }
-
-                      groupNameController.clear();
-                      groupDescriptionController.clear();
-                      membersEmail.clear();
-
-                      Navigator.of(context).pop();
+                    if(widget.group == null){
+                      createGroup();
                     }else{
-                      _showSnackBar(context, 'Error');
+                      editGroup();
+
                     }
+
                   },
                   child: Text('Create')
               ),
           Expanded(
             child: ListView.builder(
               itemCount: membersEmail.length,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  title: Text(membersEmail[index]),
-                );
-              },
+                itemBuilder: (context, index) {
+                  final currentUser = AuthService().currentUser;
+
+                  return ListTile(
+                    title: Text(membersEmail[index]),
+                    trailing:membersEmail[index] != currentUser!.email
+                        ? IconButton(
+                      icon: Icon(Icons.delete),
+                      onPressed: () {
+                        // Handle delete action
+                        setState(() {
+                          // Remove the email from the list
+                          membersEmail.removeAt(index);
+                        });
+                      },
+                    )
+                        : null,
+                  );
+                }
             ),
           )
             ],

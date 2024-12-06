@@ -1,6 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:strive_project/models/group_model.dart';
 import 'package:strive_project/services/auth_service.dart';
+import 'dart:math';
+
 
 class GroupService{
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
@@ -9,9 +12,7 @@ class GroupService{
   User? get currentUser => _firebaseAuth.currentUser;
 
   AuthService authService = AuthService();
-
-
-
+  Random random = Random();
 
   Future<int?> checkUserEmail(String email) async{
     try{
@@ -53,19 +54,14 @@ class GroupService{
         return false; // Duplicate group name
       }
 
+      int randomInt = random.nextInt(100);
 
-      String customGroupId = '${currentUser!.email}-${groupName.replaceAll(' ', '-')}';
+      String customGroupId = '${currentUser!.email}-${groupName.replaceAll(' ', '-')}.${randomInt.toString()}';
+      
+      GroupModel newGroup = GroupModel(groupID: customGroupId, groupName: groupName, groupDescription: description, groupFileName: groupFileName, members: members);
 
       // Create the group with a custom ID
-      await _firestore.collection('groups').doc(customGroupId).set({
-        'groupID': customGroupId,
-        'groupName': groupName,
-        'groupDescription': description,
-        'groupFileName': groupFileName,
-        'members': members,
-        'createdBy': currentUser!.email,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
+      await _firestore.collection('groups').add(newGroup.toMap());
 
       return true; // Group created successfully
     } catch (e) {
@@ -84,7 +80,21 @@ class GroupService{
       print("Error deleting task: $e");
     }
   }
+  
+  Future<bool> editGroup(GroupModel group) async {
 
+    try{
+      await _firestore.collection('groups')
+          .doc(group.groupID)
+          .update(group.toMap());
+      return true;
+
+    }catch(e){
+      print("Error editing group: $e");
+      return false;
+    }
+
+  }
 
   Future<List<Map<String, dynamic>>> fetchUserGroups(String userEmail) async {
     try {

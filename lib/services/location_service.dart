@@ -8,7 +8,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
      print("Location Service Enabled: $serviceEnabled");
 
-
+print(serviceEnabled);
      if (!serviceEnabled) {
        throw Exception('Location services are disabled');
      }
@@ -32,7 +32,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
    static Future<List<Map<String, dynamic>>> fetchNearbyPlaces(LatLng location, String placeType) async {
      final String apiKey = 'AIzaSyB8nUnQof8e2ZzqDzYk_Lkj4jelnk6DQmw';
      final String url =
-         'https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location.latitude},${location.longitude}&radius=1000&type=$placeType&key=$apiKey';
+         'https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location.latitude},${location.longitude}&radius=800&type=$placeType&key=$apiKey';
      print("Request URL: $url");
      try {
        final response = await http.get(Uri.parse(url));

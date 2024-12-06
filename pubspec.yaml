@@ -38,13 +38,14 @@ dependencies:
   http: ^0.13.3
   table_calendar: ^3.1.2
   geolocator: ^9.0.0
-  google_maps_flutter: ^2.9.0
+  google_maps_flutter: ^2.10.0
   syncfusion_flutter_calendar: ^27.1.58
   omni_datetime_picker: ^2.0.5
   file_picker: ^8.1.4
   open_file: ^3.5.10
   url_launcher: ^6.3.1
   path_provider: ^2.0.9
+  shared_preferences: ^2.0.18
 
 
 

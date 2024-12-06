@@ -66,20 +66,20 @@ class AuthService{
     }
   }
 
-  // Future<void> sendVerificationEmail() async {
-  //   try {
-  //     final user = currentUser;
-  //
-  //     if (user != null && !user.emailVerified) {
-  //       await user.sendEmailVerification();  // Sends the verification email
-  //       print('Verification email sent to ${user.email}');
-  //     } else {
-  //       print('User is already verified or not signed in');
-  //     }
-  //   } on FirebaseAuthException catch (e) {
-  //     throw e.message ?? 'An error occurred while sending verification email';
-  //   }
-  // }
+  Future<void> sendVerificationEmail() async {
+    try {
+      final user = currentUser;
+
+      if (user != null && !user.emailVerified) {
+        await user.sendEmailVerification();  // Sends the verification email
+        print('Verification email sent to ${user.email}');
+      } else {
+        print('User is already verified or not signed in');
+      }
+    } on FirebaseAuthException catch (e) {
+      throw e.message ?? 'An error occurred while sending verification email';
+    }
+  }
 
   Future<void> storeUserEmail(String email) async {
     try {
