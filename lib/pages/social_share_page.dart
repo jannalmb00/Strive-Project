@@ -87,6 +87,7 @@ class _SocialSharePageState extends State<SocialSharePage> {
 
     try{
       List<String> listOfFriends = await AuthService().getListFriends();
+      String? currentUserEmail = AuthService().currentUser?.email;
 
       for(String email in listOfFriends){
         var streakNumber = await groupservice.checkUserEmail(email);
@@ -94,8 +95,15 @@ class _SocialSharePageState extends State<SocialSharePage> {
           'email': email,
           'streakNumber': streakNumber ?? 0,
         });
-
       }
+      if (currentUserEmail != null) {
+        var currentUserStreak = await groupservice.checkUserEmail(currentUserEmail);
+        friendsList.add({
+          'email': currentUserEmail,
+          'streakNumber': currentUserStreak ?? 0,
+        });
+      }
+
       return friendsList;
     }catch (e){
       print("Error fetching friends and streaks: $e");
@@ -202,46 +210,40 @@ class _SocialSharePageState extends State<SocialSharePage> {
               ),
               child: Padding(
                 padding: const EdgeInsets.all(12),
-                child:Expanded(
-                    child:  Column(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.group, size: 40, color: Colors.blue),
+                    SizedBox(height: 8),
+                    Text(
+                      group.groupName ?? 'Unnamed Group',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: 12),
+                    Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.group, size: 40, color: Colors.blue),
-                        SizedBox(height: 8),
-                        Text(
-                          group.groupName ?? 'Unnamed Group',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        SizedBox(height: 4),
-                        // Text(
-                        //   "Members: ${group.members.join(', ')}",
-                        //   overflow: TextOverflow.clip,
-                        //   style: TextStyle(
-                        //     fontSize: 12,
-                        //     color: Colors.grey[600],
-                        //   ),
-                        //   textAlign: TextAlign.center,
-                        // ),
-                        SizedBox(height: 12),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            IconButton(onPressed:(){
+                        IconButton(
+                            onPressed: () {
                               Navigator.of(context).push(
                                 MaterialPageRoute(
-                                  builder: (context) => CreateGroupFormPage(group: group,),
+                                  builder: (context) =>
+                                      CreateGroupFormPage(group: group),
                                 ),
                               );
-                            } , icon: Icon(Icons.edit)),
-                            IconButton(onPressed: () => deleteGroup( group), icon: Icon(Icons.delete)),
-                          ],
-                        )
+                            },
+                            icon: Icon(Icons.edit)),
+                        IconButton(
+                            onPressed: () => deleteGroup(group),
+                            icon: Icon(Icons.delete)),
                       ],
-                    )),
+                    ),
+                  ],
+                ),
               ),
             ),
           );
@@ -249,7 +251,6 @@ class _SocialSharePageState extends State<SocialSharePage> {
       ),
     );
   }
-
 
   Widget _displayPersonalStreak(){
     return FutureBuilder<int>(
@@ -327,19 +328,26 @@ class _SocialSharePageState extends State<SocialSharePage> {
                   ),
                 ),
                 IconButton(
-                  onPressed: () {
-                    Navigator.of(context).push(
+                  onPressed: () async {
+                    final bool? shouldRefresh = await Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (context) => CreateGroupFormPage(),
                       ),
                     );
+                    if (shouldRefresh == true) {
+                      setState(() {
+
+                        _fetchGroups();
+                      });
+                    }
+
                   },
                   icon: Icon(Icons.add_box_rounded, color: Colors.blue, size: 28),
                 ),
               ],
             ),
             SizedBox(height: 16),
-            Expanded(child: _displayGroups()),
+            _displayGroups()
           ],
         ),
       ),

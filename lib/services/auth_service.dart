@@ -22,15 +22,15 @@ class AuthService{
     );
   }
 
-  Future<void> createUser({
+  Future<bool> createUser({
     required String email,
     required String password,
     required String name,
     required String schoolName,
-  }) async{
+  }) async {
     try {
-
       print('${email}, ${password}, ${name}, ${schoolName}');
+
       // Create the user with email and password
       UserCredential userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
         email: email,
@@ -40,30 +40,57 @@ class AuthService{
       // Get the user from Firebase Auth
       User? user = userCredential.user;
 
-      print(user!.uid.toString());
-      // Store additional user data in Firestore
       if (user != null) {
-        storeUserEmail(email);
-        // Attempt to add user data to Firestore
-        await _firestore.collection('users').doc(user.uid).set({
-          'name': name,
-          'schoolName': schoolName,
-          'email': email,
-        }).then((value) {
-          print('User data added to Firestore successfully');
-        }).catchError((error) {
-          print('Error storing user data in Firestore: $error');
-        });
+        print(user.uid.toString());
 
-       // await _firebaseAuth.signOut();
-      }else{
-        print("user is null right? ");
 
+        return true;
+      } else {
+        print("User is null");
+        return false; // Return false if user is null
       }
-
     } catch (e) {
       print("Error creating user: $e");
+      return false; // Return false if an error occurs
     }
+  }
+
+  Future<bool> addAdditionalUserInfo(
+      String userId,
+      String email,
+      String name,
+      String schoolName,
+      ) async {
+    try {
+      // Add user data to Firestore
+      await _firestore.collection('users').doc(userId).set({
+        'name': name,
+        'schoolName': schoolName,
+        'email': email,
+      });
+
+      // Print success message
+      print('User data added to Firestore successfully');
+      return true; // Return true on success
+    } catch (e) {
+      // Handle error and print error message
+      print("Error adding user to Firestore: $e");
+      return false; // Return false on error
+    }
+  }
+
+
+
+
+
+  Future resetPassword(String email) async{
+   try{
+     await _firebaseAuth.sendPasswordResetEmail(email: email);
+     print('Password reset email sent');
+   }on FirebaseAuthException catch (e){
+     print('Error sending password reset email: $e');
+   }
+
   }
 
   Future<void> sendVerificationEmail() async {
@@ -112,6 +139,47 @@ class AuthService{
     }
   }
 
+  Future<void> addCurrentUserAsFriend(String membersEmail) async{
+    try {
+      final User? currentUser = _firebaseAuth.currentUser;
+      if (currentUser == null) {
+        print('No user is currently logged in.');
+        return;
+      }
+      final String? currentUserEmail = currentUser.email;
+      if (currentUserEmail == null) {
+        print('Current user email is null.');
+        return;
+      }
+
+      QuerySnapshot querySnapshot = await _firestore
+          .collection('users')
+          .where('email', isEqualTo: membersEmail)
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        // Get the member's document
+        DocumentSnapshot memberDoc = querySnapshot.docs.first;
+
+        // Get their listOfFriends
+        List<dynamic> listOfFriendsDynamic = memberDoc['listOfFriends'] ?? [];
+
+        // Add the current user's email (allow duplicates as per your request)
+        listOfFriendsDynamic.add(currentUserEmail);
+
+        // Update the member's document
+        await _firestore.collection('users').doc(memberDoc.id).update({
+          'listOfFriends': listOfFriendsDynamic,
+        });
+        print('Successfully added current user as a friend to $membersEmail');
+      } else {
+        print('No user found with the email $membersEmail');
+      }
+    }catch (e) {
+      print('Error adding current user as friend: $e');
+    }
+  }
+
   Future<void> deleteFriend(String email) async{
     try{
       final user = await FirebaseFirestore.instance
@@ -133,8 +201,42 @@ class AuthService{
     }
   }
 
- 
+  Future<void> deleteCurrentUserasFriend() async{
+    try {
+      final User? currentUser = _firebaseAuth.currentUser;
+      if (currentUser == null) {
+        print('No user is currently logged in.');
+        return;
+      }
+      final String? currentUserEmail = currentUser.email;
+      if (currentUserEmail == null) {
+        print('Current user email is null.');
+        return;
+      }
 
+      QuerySnapshot querySnapshot = await _firestore
+          .collection('users')
+          .where('listOfFriends', arrayContains: currentUserEmail)
+          .get();
+
+      for (QueryDocumentSnapshot doc in querySnapshot.docs) {
+        List<dynamic> friendsList = doc['listOfFriends'] ?? [];
+
+        // Remove the current user's email
+        friendsList.remove(currentUserEmail);
+
+        // Update the document with the new friends list
+        await doc.reference.update({
+          'listOfFriends': friendsList,
+        });
+
+        print("Current user's email removed from friends' lists.");
+      }
+    }catch (e){
+      print("Error removing current user as a friend: $e");
+    }
+
+  }
 
   Future<void> signOut() async{
     await _firebaseAuth.signOut();
@@ -179,9 +281,22 @@ class AuthService{
     return userModel?.name;
   }
 
-
   Future<String?> getSchoolName() async {
     UserModel? userModel = await getUserModel();
     return userModel?.schoolName;
   }
+
+  Future<void> save(String name, String age) async{
+    try{
+      await FirebaseFirestore.instance.collection('mock').add({
+        'name': name,
+        'age': age
+      });
+
+    }catch (e) {
+      print('Error storing email: $e');
+    }
+
+  }
+
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:strive_project/pages/forgot_password_page.dart';
 //service
 import 'package:strive_project/services/index.dart';
 
@@ -35,12 +36,19 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
   Future<void> createUserWithEmailAndPassword() async {
     try {
       print(_nameController.text);
-      await AuthService().createUser(  // Corrected typo here
+      bool authnCreate = await AuthService().createUser(  // Corrected typo here
           email: _emailController.text,
           password: _passwordController.text,
           name: _nameController.text,
           schoolName: _schoolNameController.text
       );
+
+      if(authnCreate){
+        String id = AuthService().currentUser!.uid;
+       // _showSnackBar(context, id);
+        //await AuthService().addAdditionalUserInfo(id, _emailController.text, _nameController.text, _schoolNameController.text);
+
+      }
     } on FirebaseAuthException catch (e) {
       setState(() {
         errorMessage = e.message ?? 'An unknown error occurred';
@@ -84,6 +92,31 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
       child: Text(isLogin ? 'Register instead' : 'Login instead'),
     );
   }
+  Widget _forgotpasswordButton() {
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(MaterialPageRoute(builder: (context){
+          return ForgotPasswordPage();
+        }));
+      },
+      child: Text('Forgot password',
+      style: TextStyle(
+        color: Colors.indigoAccent,
+        fontWeight: FontWeight.bold
+      ),),
+    );
+  }
+
+  void _showSnackBar(BuildContext context, String message){
+    ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          duration: Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.black54,
+        )
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -106,6 +139,8 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
             _errorMessage(),
             _submitButton(),
             _loginOrRegisterButton(),
+            _forgotpasswordButton()
+
           ],
         ),
       ),

@@ -50,6 +50,7 @@ class _NearbySpotPageState extends State<NearbySpotPage> {
     _addMarkerForCurrentLocation();
     _getNearbyPlaces(context);
   }
+
   void _addMarkerForCurrentLocation() {
     if (_center != null) {
       setState(() {
@@ -234,7 +235,6 @@ class _NearbySpotPageState extends State<NearbySpotPage> {
   }
 
   void viewPlace(Map<String, dynamic> place) async{
-    bool isOpenNow = place['opening_hours'] != null ? place['opening_hours']['open_now'] : false;
 
 
     showModalBottomSheet(
@@ -266,15 +266,7 @@ class _NearbySpotPageState extends State<NearbySpotPage> {
                   style: TextStyle(fontSize: 16),
                 ),
                 SizedBox(height: 8),
-                SizedBox(height: 8),
-
-                // Display the opening hours status
-                Text(
-                  'Open Now: ${isOpenNow ? 'Yes' : 'No'}',
-                  style: TextStyle(fontSize: 16),
-                ),
-
-                // Optionally, you can display other information such as phone number, website, etc.
+             // Optional
                 place['phone'] != null
                     ? Text(
                   'Phone: ${place['phone']}',
@@ -347,8 +339,6 @@ class _NearbySpotPageState extends State<NearbySpotPage> {
              myLocationButtonEnabled: true, // Adds a button to go to the current location
            ),
          ),
-
-
 
        ],),
       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:strive_project/pages/index.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:intl/intl.dart';
 //services
 import 'package:strive_project/services/index.dart';
 //model
@@ -41,11 +42,15 @@ class _SingleGroupPageState extends State<SingleGroupPage> {
         )
     );
   }
-  void startEdit(Task task){
-    Navigator.of(context).push(
+  void startEdit(Task task) async{
+    final bool? shouldRefresh = await  Navigator.of(context).push(
         MaterialPageRoute(
             builder: (context) => TaskEventForm(isPersonalTask: false, task: task, groupId: widget.currentGroup.groupID,) )
     );
+
+    if(shouldRefresh != null){
+      handleRefresh(shouldRefresh);
+    }
   }
   Future<void> _fetchTask() async {
     try {
@@ -62,6 +67,16 @@ class _SingleGroupPageState extends State<SingleGroupPage> {
     //
     // _showSnackBar(context, tasksText);
 
+  }
+
+  void handleRefresh(bool result){
+    print("Should refresh: $result");
+    if (result == true) {
+      setState(() {
+
+        _fetchTask();
+      });
+    }
   }
 
   void viewTask(BuildContext context, Task task) {
@@ -162,6 +177,7 @@ class _SingleGroupPageState extends State<SingleGroupPage> {
       },
     );
   }
+
   Widget _todoContainer() {
     // Filter tasks to show only incomplete ones
     List<Task> incompleteTasks = tasks!.where((task) {
@@ -189,7 +205,7 @@ class _SingleGroupPageState extends State<SingleGroupPage> {
                 SlidableAction(
                   onPressed: (BuildContext context) async {
                     try {
-                      await taskService.deletePersonalTask(incompleteTasks[index].id);
+                      await taskService.deleteGroupTask(widget.currentGroup.groupID,incompleteTasks[index]);
                       setState(() {
                         tasks!.remove(incompleteTasks[index]); // Remove task from list
                       });
@@ -278,7 +294,7 @@ class _SingleGroupPageState extends State<SingleGroupPage> {
                 SlidableAction(
                   onPressed: (BuildContext context) async {
                     try {
-                      await taskService.deletePersonalTask(completeTasks[index].id);
+                      await taskService.deleteGroupTask(widget.currentGroup.groupID,completeTasks[index]);
                       setState(() {
                         tasks!.remove(completeTasks[index]); // Remove task from list
                       });
@@ -327,18 +343,67 @@ class _SingleGroupPageState extends State<SingleGroupPage> {
 
     List<Task> missedTasks = tasks!.where((task) {
       try {
-        // Ensure time is not empty before parsing
-        if (task.date == null || task.date!.isEmpty || task.status) {
-          print("no time:");
-          return false; // Skip tasks with no time
+        // Ensure the task has either a date or time
+        if ((task.date == null || task.date!.isEmpty) && (task.time == null || task.time!.isEmpty)) {
+          print("No date and no time");
+          return false; // Skip tasks without both date and time
         }
-        bool priorityMatch = (_selectedPriority == 'All') || (task.priorityLevel == _selectedPriority);
 
-        DateTime taskTime = DateTime.parse(task.date!);
-        return taskTime.isBefore(DateTime.now()) && priorityMatch;
+        DateTime now = DateTime.now();
+
+        // If task has only a time
+        if (task.date == null || task.date!.isEmpty) {
+          DateFormat timeFormat = DateFormat("hh:mm a");
+          DateTime taskTime = timeFormat.parse(task.time!);
+
+          // Create a DateTime object for today with the task's time
+          DateTime taskDateTimeToday = DateTime(now.year, now.month, now.day, taskTime.hour, taskTime.minute);
+
+          print("Task time (today): $taskDateTimeToday");
+          print("Now: $now");
+          print("Status: ${ task.status == false}");
+
+          if (taskDateTimeToday.isBefore(now) &&task.status == false) {
+            return (_selectedPriority == 'All') || (task.priorityLevel == _selectedPriority || task.status == false);
+          } else {
+            return false; // Task time is after now
+          }
+        }
+
+        // If task has only a date
+        if (task.time == null || task.time!.isEmpty) {
+          DateFormat dateFormat = DateFormat("yyyy-MM-dd");
+          DateTime taskDate = dateFormat.parse(task.date!);
+
+          print("Task date: $taskDate");
+          print(task.title);
+          print("Now: $now");
+          print("Status: ${ task.status == false}");
+
+          if (taskDate.isBefore(now) &&task.status == false) {
+            return (_selectedPriority == 'All') || (task.priorityLevel == _selectedPriority  ) ;
+          } else {
+            return false; // Task date is after today
+          }
+        }
+
+        // If task has both date and time
+        String taskDateTimeString = "${task.date!} ${task.time!}";
+        DateFormat dateTimeFormat = DateFormat("yyyy-MM-dd hh:mm a");
+        DateTime taskDateTime = dateTimeFormat.parse(taskDateTimeString);
+
+        print("Task datetime: $taskDateTime");
+        print("Now: $now");
+        print("Status: ${ task.status != false}");
+
+        if (taskDateTime.isBefore(now) && task.status == false) {
+          return (_selectedPriority == 'All') || (task.priorityLevel == _selectedPriority || task.status == false);
+        } else {
+          return false; // Task datetime is after now
+        }
       } catch (e) {
-        // Skip tasks with invalid date format
-        return false;
+        print("Error parsing task date/time: $e");
+        return false; // Skip tasks with invalid date/time format
       }
     }).toList();
 
@@ -353,7 +418,7 @@ class _SingleGroupPageState extends State<SingleGroupPage> {
                 SlidableAction(
                   onPressed: (BuildContext context) async {
                     try {
-                      await taskService.deletePersonalTask(missedTasks[index].id);
+                      await taskService.deleteGroupTask(widget.currentGroup.groupID, missedTasks[index]);
                       setState(() {
                         tasks!.remove(missedTasks[index]); // Remove task from list
                       });
@@ -431,6 +496,7 @@ class _SingleGroupPageState extends State<SingleGroupPage> {
       return Center(child: Text('No tasks available'));
     }
   }
+
   Widget _priorityDropdown(){
     final priorities = ['All', 'High', 'Mid', 'Low'];
 
@@ -470,8 +536,8 @@ class _SingleGroupPageState extends State<SingleGroupPage> {
                   ),
                 ),
                 GestureDetector(
-                  onTap: (){
-                  
+                  onTap: () {
+
                     Navigator.of(context).
                     push(MaterialPageRoute(builder: (context) => FileListPage(currentGroup: widget.currentGroup,)));
 
@@ -492,11 +558,15 @@ class _SingleGroupPageState extends State<SingleGroupPage> {
                   children: [
                     Text("Tasks"),
                     IconButton(
-                        onPressed: (){
-                          Navigator.of(context).push(
+                        onPressed: () async{
+                          final bool? shouldRefresh = await Navigator.of(context).push(
                               MaterialPageRoute(
                                   builder: (context) =>TaskEventForm(isPersonalTask: false, groupId: widget.currentGroup.groupID,) )
                           );
+
+                          if(shouldRefresh != null){
+                            handleRefresh(shouldRefresh);
+                          }
                         },
                         icon: Icon(Icons.add_box_rounded)
                     ),

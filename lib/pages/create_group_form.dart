@@ -62,6 +62,10 @@ class _CreateGroupFormPageState extends State<CreateGroupFormPage> {
     if( groupNameController.text.isNotEmpty && groupDescriptionController.text.isNotEmpty && membersEmail.isNotEmpty && fileNameController.text.isNotEmpty){
       final currentUser = AuthService().currentUser;
       final userEmail = currentUser?.email ?? 'unknown@example.com';
+
+      for(var member in membersEmail){
+        await AuthService().addCurrentUserAsFriend(member);
+      }
       membersEmail.add(userEmail);
 
       bool result = await groupservice.createGroup(groupNameController.text, groupDescriptionController.text,fileNameController.text, membersEmail);
@@ -77,7 +81,7 @@ class _CreateGroupFormPageState extends State<CreateGroupFormPage> {
       _showSnackBar(context, 'You must fill everything and make sure to add user :)');
     }
     clearControllers();
-    Navigator.of(context).pop();
+    Navigator.of(context).pop(true);
 
   }
 
@@ -85,6 +89,15 @@ class _CreateGroupFormPageState extends State<CreateGroupFormPage> {
     if( groupNameController.text.isNotEmpty && groupDescriptionController.text.isNotEmpty && membersEmail.isNotEmpty && fileNameController.text.isNotEmpty){
       GroupModel editGroup = GroupModel(groupID: widget.group!.groupID, groupName:widget.group!.groupName ,
           groupDescription: groupDescriptionController.text, groupFileName: widget.group!.groupFileName , members: membersEmail);
+
+      List<String> existingMembers = widget.group?.members ?? [];
+      List<String> newMembers = membersEmail
+          .where((email) => !existingMembers.contains(email))
+          .toList();
+
+      for(var member in newMembers){
+        await AuthService().addCurrentUserAsFriend(member);
+      }
 
      bool result =  await groupservice.editGroup(editGroup);
      if(result){
@@ -97,7 +110,7 @@ class _CreateGroupFormPageState extends State<CreateGroupFormPage> {
       _showSnackBar(context, 'You must fill everything :)');
     }
     clearControllers();
-    Navigator.of(context).pop();
+    Navigator.of(context).pop(true);
 
   }
 

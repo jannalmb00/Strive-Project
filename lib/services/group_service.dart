@@ -61,7 +61,7 @@ class GroupService{
       GroupModel newGroup = GroupModel(groupID: customGroupId, groupName: groupName, groupDescription: description, groupFileName: groupFileName, members: members);
 
       // Create the group with a custom ID
-      await _firestore.collection('groups').add(newGroup.toMap());
+      await _firestore.collection('groups').doc(customGroupId).set(newGroup.toMap());
 
       return true; // Group created successfully
     } catch (e) {
@@ -72,6 +72,7 @@ class GroupService{
 
   Future<void> deleteGroup(String groupID) async {
     try {
+      AuthService().deleteCurrentUserasFriend();
       await FirebaseFirestore.instance
           .collection('groups')
           .doc(groupID)

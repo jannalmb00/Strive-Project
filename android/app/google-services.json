@@ -7,6 +7,25 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:406054400468:android:ca7d2b1b653ac79d3ea641",
+        "android_client_info": {
+          "package_name": "com.example.mystrive"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCJQ4s5bzUICTV04iLzZsDDBBvq5GuxzD0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:406054400468:android:c48e499866bf0ee93ea641",
         "android_client_info": {
           "package_name": "com.example.strive_project"

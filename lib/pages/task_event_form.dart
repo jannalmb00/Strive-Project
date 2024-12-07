@@ -245,9 +245,9 @@ class _TaskEventFormState extends State<TaskEventForm> {
                     }else{
                         result = await editTask();
                     }
-
+print(result);
                     if (result) {
-                      Navigator.of(context).pop();
+                      Navigator.of(context).pop(result);
                     } else {
                       widget.task == null ?
                       _showSnackBar(context, "Failed to add task")

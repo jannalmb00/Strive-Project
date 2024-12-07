@@ -21,3 +21,6 @@ export 'create_group_form.dart';
 //2fa
 export 'verify_user_page.dart';
 
+//forgot password
+export 'forgot_password_page.dart';
+

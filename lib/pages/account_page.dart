@@ -20,6 +20,9 @@ class _AccountPageState extends State<AccountPage> {
   String? schoolName;
   bool isLoading = true;
 
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _schoolNameController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -48,6 +51,22 @@ class _AccountPageState extends State<AccountPage> {
         schoolName = 'Not entered';
         isLoading = false;
       });
+    }
+  }
+
+  Widget _entryField(String title, TextEditingController controller,  {bool isPassword = false}) {
+    return TextField(
+      controller: controller,
+      obscureText: isPassword,
+      decoration: InputDecoration(
+        labelText: title,
+      ),
+    );
+  }
+
+  void save(){
+    if(_nameController.text.isNotEmpty && _schoolNameController.text.isNotEmpty){
+
     }
   }
 
@@ -86,6 +105,7 @@ class _AccountPageState extends State<AccountPage> {
               onPressed: signOut,
               child: Text("Signout"),
             ),
+
           ],
         ),
       ),
