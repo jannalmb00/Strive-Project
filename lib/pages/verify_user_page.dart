@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:strive_project/pages/container_nav_bar.dart';
-import 'package:strive_project/pages/home_page.dart';
+import 'package:strive_project/pages/user_details_page.dart';
 import 'package:strive_project/services/index.dart';
 import 'dart:async';
 
@@ -19,58 +19,80 @@ class _VerifyUserPageState extends State<VerifyUserPage> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
-    isUserVerified = FirebaseAuth.instance.currentUser!.emailVerified;
 
-    if(!isUserVerified){
+    // Check the initial email verification status after widget is built
+    checkInitialVerification();
+  }
+
+  // Separate method to handle the email verification check asynchronously
+  Future<void> checkInitialVerification() async {
+    // Wait until Firebase instance is fully loaded
+    await FirebaseAuth.instance.currentUser!.reload();
+    bool isVerified = FirebaseAuth.instance.currentUser!.emailVerified;
+
+    if (isVerified) {
+      // Navigate immediately if verified
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const UserDetailsPage()),
+      );
+    } else {
+      setState(() {
+        isUserVerified = false;
+      });
+
+      // Send the verification email and periodically check verification
       sendVerificationEmail();
-
       timer = Timer.periodic(
-        Duration(seconds: 3),
-          (_) => checkEmailVerified(),
+        const Duration(seconds: 3),
+            (_) => checkEmailVerified(),
       );
     }
   }
-
 
   @override
   void dispose() {
+    // Cancel the timer when the widget is disposed
     timer?.cancel();
     super.dispose();
-
   }
 
-  Future checkEmailVerified() async{
-    await FirebaseAuth.instance.currentUser!.reload();
-    setState(() {
-      isUserVerified = FirebaseAuth.instance.currentUser!.emailVerified;
-    });
-
-    if(isUserVerified){
-      timer?.cancel();
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => ContainerBar()),  // Or your home page
-      );
-    }
-
-  }
-
-  Future sendVerificationEmail() async{
+  // Check if the email is verified and navigate if verified
+  Future<void> checkEmailVerified() async {
     try {
-      await AuthService().sendVerificationEmail();  //auth
+      await FirebaseAuth.instance.currentUser!.reload();
+      User? user = FirebaseAuth.instance.currentUser;
+      final isVerified = user?.emailVerified ?? false;
+      print("is verified: $isVerified");
+
+      if (isVerified) {
+        setState(() {
+          isUserVerified = true;
+        });
+        timer?.cancel(); // Cancel the timer
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) =>  ContainerBar()),
+        );
+      }
+    } catch (e) {
+      print('Error checking email verification: $e');
+    }
+  }
+
+  // Send the verification email and allow resending after delay
+  Future<void> sendVerificationEmail() async {
+    try {
+      await AuthService().sendVerificationEmail();
       setState(() => canResendEmail = false);
-      await Future.delayed(Duration(seconds: 5));
+
+      await Future.delayed(const Duration(seconds: 5));
       setState(() => canResendEmail = true);
     } catch (e) {
-
       print('Error sending verification email: $e');
     }
-  }
-
-  void manualCheckVerification() async{
-    checkEmailVerified();
   }
 
   @override
@@ -83,23 +105,28 @@ class _VerifyUserPageState extends State<VerifyUserPage> {
       ),
       body: Center(
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text("Check your email to verify user"),
+            const Text("Check your email to verify user"),
             ElevatedButton.icon(
-                onPressed: canResendEmail ? sendVerificationEmail : null,
-                label: Text('Resend Email'),
-                icon: Icon(Icons.email),
+              onPressed: canResendEmail ? sendVerificationEmail : null,
+              label: const Text('Resend Email'),
+              icon: const Icon(Icons.email),
             ),
             ElevatedButton(
-              onPressed: manualCheckVerification ,
-              child: Text('Check Email Verification'),
+              onPressed: checkEmailVerified,
+              child: const Text('Check Email Verification'),
             ),
             TextButton(
-                onPressed: FirebaseAuth.instance.signOut,
-                child: Text("Cancel"))
+              onPressed: () {
+                FirebaseAuth.instance.signOut();
+                Navigator.pop(context);
+              },
+              child: const Text("Cancel"),
+            ),
+            Text(isUserVerified.toString()),
           ],
         ),
-
       ),
     );
   }

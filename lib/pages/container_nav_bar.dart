@@ -32,7 +32,11 @@ class _ContainerBarState extends State<ContainerBar> {
   }
 
   Future<void> signOut() async {
-    await AuthService().signOut();
+    await AuthService().signOut();  // Sign out the user
+    Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => LoginRegisterPage())  // Navigate to the Login Page
+    );
   }
 
   // Sign out button widget
