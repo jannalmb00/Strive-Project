@@ -17,12 +17,11 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
 
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _schoolNameController = TextEditingController();
 
-  Future<void> signInWithEmailAndPassword() async {
+  Future<void> signInWithEmailAndPassword(BuildContext context) async {
     try {
       await AuthService().signInWithEmailAndPassword(
+        context: context,
         email: _emailController.text,
         password: _passwordController.text,
       );
@@ -33,22 +32,14 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
     }
   }
 
-  Future<void> createUserWithEmailAndPassword() async {
+  Future<void> createUserWithEmailAndPassword(BuildContext context) async {
     try {
-      print(_nameController.text);
       bool authnCreate = await AuthService().createUser(  // Corrected typo here
-          email: _emailController.text,
-          password: _passwordController.text,
-          name: _nameController.text,
-          schoolName: _schoolNameController.text
+        context: context,
+        email: _emailController.text,
+        password: _passwordController.text,
       );
 
-      if(authnCreate){
-        String id = AuthService().currentUser!.uid;
-       // _showSnackBar(context, id);
-        //await AuthService().addAdditionalUserInfo(id, _emailController.text, _nameController.text, _schoolNameController.text);
-
-      }
     } on FirebaseAuthException catch (e) {
       setState(() {
         errorMessage = e.message ?? 'An unknown error occurred';
@@ -58,7 +49,7 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
 
   // Widgets
   Widget _title() {
-    return const Text('Firebase Auth');
+    return isLogin ? Text('Login') : Text('Register');
   }
 
   Widget _entryField(String title, TextEditingController controller,  {bool isPassword = false}) {
@@ -77,7 +68,14 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
 
   Widget _submitButton() {
     return ElevatedButton(
-      onPressed: isLogin ? signInWithEmailAndPassword : createUserWithEmailAndPassword,
+      onPressed: (){
+      if(isLogin){
+        signInWithEmailAndPassword(context);
+      }else{
+        createUserWithEmailAndPassword(context);
+      }
+
+    },
       child: Text(isLogin ? 'Login' : 'Register'),
     );  // Added missing semicolon
   }
@@ -132,8 +130,6 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            if (!isLogin) _entryField('Name', _nameController),
-            if(!isLogin) _entryField('School Name:', _schoolNameController),
             _entryField('Email', _emailController),
             _entryField('Password', _passwordController,isPassword: true),
             _errorMessage(),

@@ -7,6 +7,9 @@ import 'package:strive_project/models/index.dart';
 //service
 import 'package:strive_project/services/index.dart';
 
+//page
+import 'package:strive_project/pages/index.dart';
+
 class AccountPage extends StatefulWidget {
   const AccountPage({super.key});
 
@@ -19,8 +22,9 @@ class _AccountPageState extends State<AccountPage> {
   String? userName;
   String? schoolName;
   bool isLoading = true;
-
+  final TextEditingController _idController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _schoolNameController = TextEditingController();
 
   @override
@@ -64,11 +68,7 @@ class _AccountPageState extends State<AccountPage> {
     );
   }
 
-  void save(){
-    if(_nameController.text.isNotEmpty && _schoolNameController.text.isNotEmpty){
 
-    }
-  }
 
   void _showSnackBar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -83,7 +83,7 @@ class _AccountPageState extends State<AccountPage> {
 
   Future<void> signOut() async {
     await AuthService().signOut();
-    Navigator.pushReplacementNamed(context, '/login'); // Navigate to login on sign out
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => LoginRegisterPage()));
   }
 
   @override
@@ -105,6 +105,7 @@ class _AccountPageState extends State<AccountPage> {
               onPressed: signOut,
               child: Text("Signout"),
             ),
+            SizedBox(height: 10,),
 
           ],
         ),

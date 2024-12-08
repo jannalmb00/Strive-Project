@@ -760,7 +760,6 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
               _priorityDropdown(),
-              Text(AuthService().currentUser!.uid),
               Text(_selectedPriority),
               _segmentedButtonWidget(),
               Flexible(

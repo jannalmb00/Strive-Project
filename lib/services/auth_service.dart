@@ -1,5 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:awesome_dialog/awesome_dialog.dart';
+import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 //model
 import 'package:strive_project/models/index.dart';
@@ -13,45 +15,87 @@ class AuthService{
   Stream<User?> get authStateChanges => _firebaseAuth.authStateChanges();
 
   Future<void> signInWithEmailAndPassword({
+    required BuildContext context,
     required String email,
     required String password,
   })async{
-    await _firebaseAuth.signInWithEmailAndPassword(
-        email: email,
-        password: password
-    );
+    try{
+      await _firebaseAuth.signInWithEmailAndPassword(
+          email: email,
+          password: password
+      );
+    } on FirebaseAuthException catch(e){
+      if (e.code == 'user-not-found') {
+        print("User not found");
+        AwesomeDialog(
+          context: context, // Ensure context is passed
+          dialogType: DialogType.error,
+          animType: AnimType.bottomSlide,
+          title: 'User Not Found',
+          desc: 'The email you entered does not match any account.',
+          btnOkOnPress: () {Navigator.of(context).pop();  },
+        ).show();
+      } else if (e.code == 'wrong-password') {
+        AwesomeDialog(
+          context: context,
+          dialogType: DialogType.warning,
+          animType: AnimType.bottomSlide,
+          title: 'Incorrect Password',
+          desc: 'The password you entered is incorrect.',
+          btnOkOnPress: () {Navigator.of(context).pop();  },
+        ).show();
+      } else {
+        AwesomeDialog(
+          context: context,
+          dialogType: DialogType.error,
+          animType: AnimType.bottomSlide,
+          title: 'Error',
+          desc: 'Something went wrong. Please try again.',
+          btnOkOnPress: () {Navigator.of(context).pop();  },
+        ).show();
+      }
+    }
   }
 
   Future<bool> createUser({
+    required BuildContext context,
     required String email,
     required String password,
-    required String name,
-    required String schoolName,
   }) async {
     try {
-      print('${email}, ${password}, ${name}, ${schoolName}');
+      //print('${email}, ${password}, ${name}, ${schoolName}');
 
       // Create the user with email and password
       UserCredential userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
+      return true;
 
-      // Get the user from Firebase Auth
-      User? user = userCredential.user;
+    } on FirebaseAuthException catch (e) {
+      String errorMessage = '';
 
-      if (user != null) {
-        print(user.uid.toString());
-
-
-        return true;
+      if (e.code == 'email-already-in-use') {
+        errorMessage = 'The email is already in use.';
+      } else if (e.code == 'weak-password') {
+        errorMessage = 'The password is too weak.';
+      } else if (e.code == 'invalid-email') {
+        errorMessage = 'The email is invalid.';
       } else {
-        print("User is null");
-        return false; // Return false if user is null
+        errorMessage = 'An unknown error occurred: ${e.message}';
       }
-    } catch (e) {
-      print("Error creating user: $e");
-      return false; // Return false if an error occurs
+
+      // Show error dialog
+      AwesomeDialog(
+        context: context,
+        dialogType: DialogType.error,
+        animType: AnimType.bottomSlide,
+        title: 'Error',
+        desc: errorMessage,
+        btnOkOnPress: () {},
+      ).show();
+      return false;
+
     }
   }
 
@@ -62,12 +106,10 @@ class AuthService{
       String schoolName,
       ) async {
     try {
+
+      UserModel user = UserModel(email: email,name: name,schoolName: schoolName);
       // Add user data to Firestore
-      await _firestore.collection('users').doc(userId).set({
-        'name': name,
-        'schoolName': schoolName,
-        'email': email,
-      });
+      await _firestore.collection('users').doc(userId).set(user.toMap());
 
       // Print success message
       print('User data added to Firestore successfully');
@@ -78,9 +120,6 @@ class AuthService{
       return false; // Return false on error
     }
   }
-
-
-
 
 
   Future resetPassword(String email) async{
