@@ -586,7 +586,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-    Widget _getEventsContainer() {
+  Widget _getEventsContainer() {
     if (_fetchEvent() == null || events!.isEmpty) {
       return Center(child: Text('No events available.'));
     }
@@ -594,6 +594,7 @@ class _HomePageState extends State<HomePage> {
     List<Event> upcomingEvents = events!.where((event) => event.status == false).toList();
 
     return ListView.builder(
+      shrinkWrap: true,
       padding: EdgeInsets.all(10),
       itemCount: upcomingEvents.length,
       itemBuilder: (BuildContext context, int index) {
@@ -686,6 +687,7 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: Text("Welcome, $userName"),
       ),
+<<<<<<< HEAD
       body: Center(
         child: Container(
 
@@ -727,60 +729,99 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   Text("Events"),
                   IconButton(
+=======
+      body: SingleChildScrollView(
+        child: Center(
+          child:  Column(
+            mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    IconButton(
+>>>>>>> 581a2ba15728ef84c5d384d21c48ed9ddebaf5a3
                       onPressed: (){
                         Navigator.of(context).push(
                             MaterialPageRoute(
-                                builder: (context) => CalendarEventForm()),
+                                builder: (context) => CalendarEventForm())
+                        );
+
+                      },
+                      icon: Icon(Icons.menu),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    SfCalendar(
+                      view: CalendarView.day,
+                      dataSource: EventAppointmentDataSource(_appointments),
+                      onTap: (details) {
+                        if (details.targetElement == CalendarElement.appointment) {
+                          return;
+                        }
+                        // show events scheduled for that day
+                        //_eventsOfSelectedDay(details.date!);
+                      },
+                      monthViewSettings: const MonthViewSettings(
+                        appointmentDisplayMode: MonthAppointmentDisplayMode.appointment,
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    Text("Events"),
+                    IconButton(
+                      onPressed: (){
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                              builder: (context) => CalendarEventForm()),
                         );
                       },
                       icon: Icon(
-                          Icons.add_circle_outline,
+                        Icons.add_circle_outline,
                       ),
-                  ),
-                ],
-              ),
-              _quotesWidgets(),
-              Row(
-                children: [
-                  Text("Tasks"),
-                  IconButton(
-                      onPressed: () async{
-                        final bool? shouldRefresh = await  Navigator.of(context).push(
-                            MaterialPageRoute(
-                                builder: (context) => TaskEventForm(isPersonalTask: true) )
-                        );
-                        if (shouldRefresh != null) {
-                          handleRefresh(shouldRefresh);
-                        }
+                    ),
+                  ],
+                ),
+                _quotesWidgets(),
+                Row(
+                  children: [
+                    Text("Tasks"),
+                    IconButton(
+                        onPressed: () async{
+                          final bool? shouldRefresh = await  Navigator.of(context).push(
+                              MaterialPageRoute(
+                                  builder: (context) => TaskEventForm(isPersonalTask: true) )
+                          );
+                          if (shouldRefresh != null) {
+                            handleRefresh(shouldRefresh);
+                          }
 
-                      },
-                      icon: Icon(Icons.add_box_rounded)
-                  ),
+                        },
+                        icon: Icon(Icons.add_box_rounded)
+                    ),
 
-                ],
-              ),
-              _priorityDropdown(),
-              Text(_selectedPriority),
-              _segmentedButtonWidget(),
-              Flexible(
-                child: tasks == null
-                    ? Center(child: CircularProgressIndicator())
-                    : tasks!.isEmpty
-                    ? Center(child: Text('No tasks available'))
-                    : _getTaskContainer()
-              ),
-              Text("Events"),
-              Flexible(
-                  child: events == null
-                      ? Center(child: CircularProgressIndicator())
-                      : events!.isEmpty
-                      ? Center(child: Text('No events available'))
-                      : _getEventsContainer()
-              )
-            ],
+                  ],
+                ),
+                _priorityDropdown(),
+                Text(_selectedPriority),
+                _segmentedButtonWidget(),
+
+
+                Text("Events"),
+                Flexible(
+                    child: events == null
+                        ? Center(child: CircularProgressIndicator())
+                        : events!.isEmpty
+                        ? Center(child: Text('No events available'))
+                        : _getEventsContainer()
+                )
+              ],
+            ),
           ),
         ),
-      ),
+
     );
   }
 }
