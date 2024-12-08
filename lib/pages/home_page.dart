@@ -3,6 +3,7 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
+import 'package:syncfusion_flutter_calendar/calendar.dart';
 //page
 import 'package:strive_project/pages/index.dart';
 //service
@@ -31,13 +32,18 @@ class _HomePageState extends State<HomePage> {
 
   bool isLoading = true;
 
+  // for events
+  EventService eventService = EventService();
+  List<Event>? events;
+  List<Appointment> _appointments = [];
+
   @override
   void initState() {
     super.initState();
     _fetchUserName();
     _fetchRandomQuotes();
     _fetchTask();
-
+    _fetchEvent();
   }
 
   Future<void> _fetchUserName() async {
@@ -82,6 +88,26 @@ class _HomePageState extends State<HomePage> {
 
     } catch (e) {
       _showSnackBar(context, 'Error fetching tasks: $e');
+    }
+  }
+
+    Future<void> _fetchEvent() async {
+    eventService.setCalendarUpdateCallback((appointments) {
+      setState(() {
+        _appointments = appointments;
+      });
+    });
+
+    try {
+      // load events from firestore
+      List<Event> eventData = await eventService.getEvents();
+      setState(() {
+        events = eventData;
+        // convert firestore fetched events to api calendar appointments
+        _appointments = eventData.map((e) => e.toAppointment()).toList();
+      });
+    } catch (e) {
+      _showSnackBar(context, 'Error fetching events: $e');
     }
   }
 
@@ -560,6 +586,77 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+    Widget _getEventsContainer() {
+    if (_fetchEvent() == null || events!.isEmpty) {
+      return Center(child: Text('No events available.'));
+    }
+
+    List<Event> upcomingEvents = events!.where((event) => event.status == false).toList();
+
+    return ListView.builder(
+      padding: EdgeInsets.all(10),
+      itemCount: upcomingEvents.length,
+      itemBuilder: (BuildContext context, int index) {
+        return Slidable(
+          endActionPane: ActionPane(
+            motion: DrawerMotion(),
+            children: [
+              SlidableAction(
+                onPressed: (BuildContext context) async {
+                  try {
+                    await eventService.deleteEvent(upcomingEvents[index].id);
+                    setState(() {
+                      events!.removeWhere((event) => event.id == upcomingEvents[index].id);
+                      // update calendar after deleting event
+                      _appointments = events!.map((e) => e.toAppointment()).toList();
+                    });
+                    _showSnackBar(context, 'Event deleted');
+                  } catch (e) {
+                    _showSnackBar(context, 'Error deleting event: $e');
+                  }
+                },
+                icon: Icons.delete,
+                label: 'Delete',
+                backgroundColor: Colors.redAccent,
+                foregroundColor: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              SlidableAction(
+                onPressed: (BuildContext context) async {
+
+                },
+                icon: Icons.edit,
+                label: 'Edit',
+                backgroundColor: Colors.blueGrey,
+                foregroundColor: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ],
+          ),
+          child: Container(
+            margin: EdgeInsets.symmetric(vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.black12,
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: ListTile(
+              title: Text(
+                upcomingEvents[index].title,
+                style: TextStyle(
+                  fontSize: 18,
+                  decoration: upcomingEvents[index].status
+                      ? TextDecoration.lineThrough
+                      : TextDecoration.none,
+                ),
+              ),
+              subtitle: Text("Priority Level: ${upcomingEvents[index].priorityLevel}"),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _priorityDropdown(){
     final priorities = ['All', 'High', 'Mid', 'Low'];
 
@@ -608,6 +705,40 @@ class _HomePageState extends State<HomePage> {
                 ),
                 ],
               ),
+              Row(
+                children: [
+                  SfCalendar(
+                    view: CalendarView.day,
+                    dataSource: EventAppointmentDataSource(_appointments),
+                    onTap: (details) {
+                      if (details.targetElement == CalendarElement.appointment) {
+                        return;
+                      }
+                      // show events scheduled for that day
+                      //_eventsOfSelectedDay(details.date!);
+                    },
+                    monthViewSettings: const MonthViewSettings(
+                      appointmentDisplayMode: MonthAppointmentDisplayMode.appointment,
+                    ),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  Text("Events"),
+                  IconButton(
+                      onPressed: (){
+                        Navigator.of(context).push(
+                            MaterialPageRoute(
+                                builder: (context) => CalendarEventForm()),
+                        );
+                      },
+                      icon: Icon(
+                          Icons.add_circle_outline,
+                      ),
+                  ),
+                ],
+              ),
               _quotesWidgets(),
               Row(
                 children: [
@@ -638,10 +769,15 @@ class _HomePageState extends State<HomePage> {
                     : tasks!.isEmpty
                     ? Center(child: Text('No tasks available'))
                     : _getTaskContainer()
+              ),
+              Text("Events"),
+              Flexible(
+                  child: events == null
+                      ? Center(child: CircularProgressIndicator())
+                      : events!.isEmpty
+                      ? Center(child: Text('No events available'))
+                      : _getEventsContainer()
               )
-
-
-
             ],
           ),
         ),
