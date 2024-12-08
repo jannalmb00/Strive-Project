@@ -190,6 +190,7 @@ class _HomePageState extends State<HomePage> {
     }
 
     return ListView.builder(
+      shrinkWrap: true,
       padding: EdgeInsets.all(10),
       itemCount: incompleteTasks.length,
       itemBuilder: (BuildContext context, int index) {
@@ -268,6 +269,7 @@ class _HomePageState extends State<HomePage> {
     List<Task> completeTasks = tasks!.where((task) => task.status).toList();
 
     return ListView.builder(
+      shrinkWrap: true,
       padding: EdgeInsets.all(10),
       itemCount: completeTasks.length,
       itemBuilder: (BuildContext context, int index) {
@@ -349,6 +351,7 @@ class _HomePageState extends State<HomePage> {
     List<Event> upcomingEvents = events!.where((event) => event.status == false).toList();
 
     return ListView.builder(
+      shrinkWrap: true,
       padding: EdgeInsets.all(10),
       itemCount: upcomingEvents.length,
       itemBuilder: (BuildContext context, int index) {
@@ -442,9 +445,9 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: Text("Welcome, $userName"),
       ),
-      body: Center(
-        child: Container(
-          child: Column(
+      body: SingleChildScrollView(
+        child:  Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Row(
                 children: [
@@ -477,15 +480,15 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   Text("Events"),
                   IconButton(
-                      onPressed: (){
-                        Navigator.of(context).push(
-                            MaterialPageRoute(
-                                builder: (context) => CalendarEventForm()),
-                        );
-                      },
-                      icon: Icon(
-                          Icons.add_circle_outline,
-                      ),
+                    onPressed: (){
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                            builder: (context) => CalendarEventForm()),
+                      );
+                    },
+                    icon: Icon(
+                      Icons.add_circle_outline,
+                    ),
                   ),
                 ],
               ),
@@ -530,7 +533,7 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
         ),
-      ),
+
     );
   }
 }
