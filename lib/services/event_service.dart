@@ -3,10 +3,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart'; // calendar api
 import 'package:flutter/material.dart';
 //model
-import 'package:strive-project/models/index.dart';
+import 'package:strive_project/models/index.dart';
 //service
-import 'package:strive-project/services/index.dart';
-import 'package:strive-project/services/event_service.dart';
+import 'package:strive_project/services/index.dart';
+
+import 'package:strive_project/services/event_service.dart';
 
 
 class EventService{
