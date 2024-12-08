@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:table_calendar/table_calendar.dart';
-import 'package:intl/intl.dart';
-import 'package:syncfusion_flutter_calendar/calendar.dart';
 //page
 import 'package:strive_project/pages/index.dart';
 //service
 import 'package:strive_project/services/index.dart';
 //model
 import 'package:strive_project/models/index.dart';
+import 'package:syncfusion_flutter_calendar/calendar.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -24,18 +22,19 @@ class _HomePageState extends State<HomePage> {
   Map<String, dynamic>? randomQuote;
   Set<String> selected = {'Todo'};
 
+  // for tasks
   TaskService taskService = TaskService();
   //int? taskLen;
   List<Task>? tasks;
   //for sorting
   String _selectedPriority = 'All';
 
-  bool isLoading = true;
-
   // for events
   EventService eventService = EventService();
   List<Event>? events;
   List<Appointment> _appointments = [];
+
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -91,7 +90,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-    Future<void> _fetchEvent() async {
+  Future<void> _fetchEvent() async {
     eventService.setCalendarUpdateCallback((appointments) {
       setState(() {
         _appointments = appointments;
@@ -132,89 +131,6 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void viewTask(BuildContext context, Task task) {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return Container(
-          padding: EdgeInsets.all(16.0),
-          decoration: BoxDecoration(
-
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(16),
-              topRight: Radius.circular(16),
-            ),
-          ),
-          child: ListView(
-            children: [
-              // Title
-              Text(
-                "Task Details",
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-              SizedBox(height: 5),
-
-              // Task title
-              Text(
-                "Title: ${task.title}",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
-                ),
-              ),
-              SizedBox(height: 8),
-
-              // Task description
-              Text(
-                "Description: ${task.description ?? 'No description'}",
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.black54,
-                ),
-              ),
-              SizedBox(height: 12),
-
-              // Priority level
-              Text(
-                "Priority Level: ${task.priorityLevel ?? 'No priority'}",
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.black54,
-                ),
-              ),
-              SizedBox(height: 12),
-
-              // Time
-              Text(
-                "Time: ${task.time?.isEmpty ?? true ? 'No Input' : task.time}",
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.black54,
-                ),
-              ),
-              SizedBox(height: 12),
-
-              // Date
-              Text(
-                "Date: ${task.date?.isEmpty ?? true ? 'No Input' : task.date}",
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.black54,
-                ),
-              ),
-              SizedBox(height: 20),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
   void handleRefresh(bool result){
     print("Should refresh: $result");
     if (result == true) {
@@ -224,6 +140,7 @@ class _HomePageState extends State<HomePage> {
       });
     }
   }
+
   //widgets
   Widget _quotesWidgets(){
     return randomQuote != null
@@ -246,7 +163,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _segmentedButtonWidget(){
-   return SegmentedButton<String>(
+    return SegmentedButton<String>(
       segments: [
         ButtonSegment(value: 'Todo', label: Text('Todo'), icon: Icon(Icons.task)),
         ButtonSegment(value: 'Missed', label: Text('Missed'),  icon: Icon(Icons.clear)),
@@ -263,113 +180,92 @@ class _HomePageState extends State<HomePage> {
 
 
   Widget _todoContainer() {
-    return FutureBuilder<List<Task>>(
-      future:  taskService.getPersonalTasks(),
-      builder: (BuildContext context, AsyncSnapshot<List<Task>> snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        } else if (snapshot.hasData) {
-          // Filter tasks to show only incomplete ones
-          List<Task> incompleteTasks = snapshot.data!.where((task) {
-            bool status = !task.status;
-            bool priorityMatch = (_selectedPriority == 'All') || (task.priorityLevel == _selectedPriority);
-            bool afterDate = task.date == null || DateTime.parse(task.date!).isAfter(DateTime.now().copyWith(hour: 0, minute: 0, second: 0, millisecond: 0));
-            return status && priorityMatch && afterDate;
-          }).toList();
+    // Filter tasks to show only incomplete ones
+    List<Task> incompleteTasks = [];
 
-          return ListView.builder(
-            padding: EdgeInsets.all(10),
-            itemCount: incompleteTasks.length,
-            itemBuilder: (BuildContext context, int index) {
-              return Slidable(
-                endActionPane: ActionPane(
-                  motion: DrawerMotion(),
-                  children: [
-                    SlidableAction(
-                      onPressed: (BuildContext context) async {
-                        try {
-                          await taskService.deletePersonalTask(incompleteTasks[index].id);
-                          setState(() {
-                            incompleteTasks.removeAt(index); // Update the list
-                          });
-                          _showSnackBar(context, 'Task deleted');
-                        } catch (e) {
-                          _showSnackBar(context, 'Error deleting task: $e');
-                        }
-                      },
-                      icon: Icons.delete,
-                      label: 'Delete',
-                      backgroundColor: Colors.redAccent,
-                      foregroundColor: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    SlidableAction(
-                      onPressed: (BuildContext context) {
-                        startEdit(incompleteTasks[index]);
-                      },
-                      icon: Icons.edit,
-                      label: 'Edit',
-                      backgroundColor: Colors.blueGrey,
-                      foregroundColor: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ],
+    if(_selectedPriority == 'All'){
+      incompleteTasks = tasks!.where((task) => !task.status).toList();
+    }else if(_selectedPriority != 'All'){
+      incompleteTasks = tasks!.where((task) => !task.status && task.priorityLevel == _selectedPriority).toList();
+    }
+
+    return ListView.builder(
+      padding: EdgeInsets.all(10),
+      itemCount: incompleteTasks.length,
+      itemBuilder: (BuildContext context, int index) {
+        return Slidable(
+          endActionPane: ActionPane(
+              motion: DrawerMotion(),
+              children: [
+                SlidableAction(
+                  onPressed: (BuildContext context) async {
+                    try {
+                      await taskService.deletePersonalTask(incompleteTasks[index].id);
+                      setState(() {
+                        tasks!.remove(incompleteTasks[index]); // Remove task from list
+                      });
+                      _showSnackBar(context, 'Task deleted');
+                    } catch (e) {
+                      _showSnackBar(context, 'Error deleting task: $e');
+                    }
+                  },
+                  icon:Icons.delete,
+                  label: 'Delete',
+                  backgroundColor: Colors.redAccent,
+                  foregroundColor: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: Container(
-                  margin: EdgeInsets.symmetric(vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.black12,
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: GestureDetector(
-                    onTap: () => viewTask(context, incompleteTasks[index]),
-                    child: ListTile(
-                      leading: Checkbox(
-                        value: incompleteTasks[index].status,
-                        onChanged: (bool? val) {
-                          setState(() {
-                            incompleteTasks[index].status = val ?? false;
-                            taskService.editPersonalTask(incompleteTasks[index]);
-                          });
-                        },
-                        fillColor: MaterialStateProperty.all(Colors.white),
-                      ),
-                      title: Text(
-                        incompleteTasks[index].title,
-                        style: TextStyle(
-                          fontSize: 18,
-                          decoration: incompleteTasks[index].status
-                              ? TextDecoration.lineThrough
-                              : TextDecoration.none,
-                        ),
-                      ),
-                      subtitle: Text("Priority Level: ${incompleteTasks[index].priorityLevel}"),
-                    ),
-                  ),
+                SlidableAction(
+                  onPressed: (BuildContext context) async {
+                    startEdit(incompleteTasks[index]);
+
+                  },
+                  icon:Icons.edit,
+                  label: 'Edit',
+                  backgroundColor: Colors.blueGrey,
+                  foregroundColor: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                )
+              ]
+          ),
+
+          child: Container(
+            margin: EdgeInsets.symmetric(vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.black12,
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: ListTile(
+              leading: Checkbox(
+                value: incompleteTasks[index].status,
+                onChanged: (bool? val) {
+                  setState(() {
+                    incompleteTasks[index].status = val ?? false;
+                    taskService.editPersonalTask(incompleteTasks[index]);
+                  });
+                },
+                fillColor: WidgetStateProperty.all(Colors.white),
+              ),
+              title: Text(
+                incompleteTasks[index].title,
+                style: TextStyle(
+                  fontSize: 18,
+                  decoration: incompleteTasks[index].status
+                      ? TextDecoration.lineThrough
+                      : TextDecoration.none,
                 ),
-              );
-            },
-          );
-        } else {
-          return Center(child: Text('No tasks found.'));
-        }
+              ),
+              subtitle: Text("Priority Level: ${incompleteTasks[index].priorityLevel}"),
+            ),
+          ),
+        );
       },
     );
   }
 
   Widget _completedContainer() {
     // Filter tasks to show only incomplete ones
-    List<Task> completeTasks = tasks!.where((task) {
-      // First, filter based on status (completed tasks)
-      bool status = task.status;
-
-      // Filter based on priority level
-      bool priorityMatch = (_selectedPriority == 'All') || (task.priorityLevel == _selectedPriority);
-
-      return status && priorityMatch;
-    }).toList();
+    List<Task> completeTasks = tasks!.where((task) => task.status).toList();
 
     return ListView.builder(
       padding: EdgeInsets.all(10),
@@ -397,134 +293,8 @@ class _HomePageState extends State<HomePage> {
                   foregroundColor: Colors.white,
                   borderRadius: BorderRadius.circular(10),
                 ),
-              ]
-          ),
-
-          child: Container(
-            margin: EdgeInsets.symmetric(vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.black12,
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child:GestureDetector(
-              onTap:() => viewTask(context,completeTasks[index]) ,
-              child:  ListTile(
-                title: Text(
-                  completeTasks[index].title,
-                  style: TextStyle(
-                    fontSize: 18,
-                    decoration: completeTasks[index].status
-                        ? TextDecoration.lineThrough
-                        : TextDecoration.none,
-                  ),
-                ),
-                subtitle: Text("Priority Level: ${completeTasks[index].priorityLevel}"),
-              ),
-            )
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _missedContainer(){
-
-    List<Task> missedTasks = tasks!.where((task) {
-      try {
-        // Ensure the task has either a date or time
-        if ((task.date == null || task.date!.isEmpty) && (task.time == null || task.time!.isEmpty)) {
-          print("No date and no time");
-          return false; // Skip tasks without both date and time
-        }
-
-        DateTime now = DateTime.now();
-
-        // If task has only a time
-        if (task.date == null || task.date!.isEmpty) {
-          DateFormat timeFormat = DateFormat("hh:mm a");
-          DateTime taskTime = timeFormat.parse(task.time!);
-
-          // Create a DateTime object for today with the task's time
-          DateTime taskDateTimeToday = DateTime(now.year, now.month, now.day, taskTime.hour, taskTime.minute);
-
-          print("Task time (today): $taskDateTimeToday");
-          print("Now: $now");
-          print("Status: ${ task.status == false}");
-
-          if (taskDateTimeToday.isBefore(now) &&task.status == false) {
-            return (_selectedPriority == 'All') || (task.priorityLevel == _selectedPriority || task.status == false);
-          } else {
-            return false; // Task time is after now
-          }
-        }
-
-        // If task has only a date
-        if (task.time == null || task.time!.isEmpty) {
-          DateFormat dateFormat = DateFormat("yyyy-MM-dd");
-          DateTime taskDate = dateFormat.parse(task.date!);
-
-          print("Task date: $taskDate");
-          print(task.title);
-          print("Now: $now");
-          print("Status: ${ task.status == false}");
-
-          if (taskDate.isBefore(now) &&task.status == false) {
-            return (_selectedPriority == 'All') || (task.priorityLevel == _selectedPriority  ) ;
-          } else {
-            return false; // Task date is after today
-          }
-        }
-
-        // If task has both date and time
-        String taskDateTimeString = "${task.date!} ${task.time!}";
-        DateFormat dateTimeFormat = DateFormat("yyyy-MM-dd hh:mm a");
-        DateTime taskDateTime = dateTimeFormat.parse(taskDateTimeString);
-
-        print("Task datetime: $taskDateTime");
-        print("Now: $now");
-        print("Status: ${ task.status != false}");
-
-        if (taskDateTime.isBefore(now) && task.status == false) {
-          return (_selectedPriority == 'All') || (task.priorityLevel == _selectedPriority || task.status == false);
-        } else {
-          return false; // Task datetime is after now
-        }
-      } catch (e) {
-        print("Error parsing task date/time: $e");
-        return false; // Skip tasks with invalid date/time format
-      }
-    }).toList();
-
-
-    return ListView.builder(
-      padding: EdgeInsets.all(10),
-      itemCount: missedTasks.length,
-      itemBuilder: (BuildContext context, int index) {
-        return  Slidable(
-          endActionPane: ActionPane(
-              motion: DrawerMotion(),
-              children: [
                 SlidableAction(
                   onPressed: (BuildContext context) async {
-                    try {
-                      await taskService.deletePersonalTask(missedTasks[index].id);
-                      setState(() {
-                        tasks!.remove(missedTasks[index]); // Remove task from list
-                      });
-                      _showSnackBar(context, 'Task deleted');
-                    } catch (e) {
-                      _showSnackBar(context, 'Error deleting task: $e');
-                    }
-                  },
-                  icon:Icons.delete,
-                  label: 'Delete',
-                  backgroundColor: Colors.redAccent,
-                  foregroundColor: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                SlidableAction(
-                  onPressed: (BuildContext context) async {
-                    startEdit(missedTasks[index]);
 
                   },
                   icon:Icons.edit,
@@ -542,46 +312,31 @@ class _HomePageState extends State<HomePage> {
               color: Colors.black12,
               borderRadius: BorderRadius.circular(15),
             ),
-            child: GestureDetector(
-              onTap: () => viewTask(context,missedTasks[index] ),
-              child: ListTile(
-                title: Text(
-                  missedTasks[index].title,
-                  style: TextStyle(
-                      fontSize: 18,
-                      decoration: missedTasks[index].status
-                          ? TextDecoration.lineThrough
-                          : TextDecoration.none,
-                      color: Colors.red
-                  ),
+            child: ListTile(
+              title: Text(
+                completeTasks[index].title,
+                style: TextStyle(
+                  fontSize: 18,
+                  decoration: completeTasks[index].status
+                      ? TextDecoration.lineThrough
+                      : TextDecoration.none,
                 ),
-                subtitle: Text("Priority Level: ${missedTasks[index].priorityLevel}",
-                  style: TextStyle(color: Colors.red),),
-                trailing: Text(missedTasks[index].date.toString(),
-                  style: TextStyle(
-                      color: Colors.red
-                  ),),
               ),
+              subtitle: Text("Priority Level: ${completeTasks[index].priorityLevel}"),
             ),
           ),
         );
       },
     );
-
-
   }
 
   Widget _getTaskContainer() {
     if (selected.contains('Todo')) {
-     // _showSnackBar(context, tasks!.length.toString());
+      // _showSnackBar(context, tasks!.length.toString());
       return _todoContainer();  // Return the Todo container
-    } else if (selected.contains('Missed')) {
-      return _missedContainer();// Call and return the completed container
-    } else if (selected.contains('Completed')){
-      return _completedContainer();
-
-    }
-    else {
+    } else if (selected.contains('Completed')) {
+      return _completedContainer();  // Call and return the completed container
+    } else {
       return Center(child: Text('No tasks available'));
     }
   }
@@ -594,7 +349,6 @@ class _HomePageState extends State<HomePage> {
     List<Event> upcomingEvents = events!.where((event) => event.status == false).toList();
 
     return ListView.builder(
-      shrinkWrap: true,
       padding: EdgeInsets.all(10),
       itemCount: upcomingEvents.length,
       itemBuilder: (BuildContext context, int index) {
@@ -658,6 +412,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+
   Widget _priorityDropdown(){
     final priorities = ['All', 'High', 'Mid', 'Low'];
 
@@ -687,71 +442,20 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: Text("Welcome, $userName"),
       ),
-<<<<<<< HEAD
       body: Center(
         child: Container(
-
           child: Column(
             children: [
               Row(
                 children: [
-                IconButton(
-                  onPressed: (){
-                    Navigator.of(context).push(
-                        MaterialPageRoute(
-                            builder: (context) => CalendarEventForm())
-                    );
-
-                  },
-                  icon: Icon(Icons.menu),
-                ),
-                ],
-              ),
-              Row(
-                children: [
-                  SfCalendar(
-                    view: CalendarView.day,
-                    dataSource: EventAppointmentDataSource(_appointments),
-                    onTap: (details) {
-                      if (details.targetElement == CalendarElement.appointment) {
-                        return;
-                      }
-                      // show events scheduled for that day
-                      //_eventsOfSelectedDay(details.date!);
-                    },
-                    monthViewSettings: const MonthViewSettings(
-                      appointmentDisplayMode: MonthAppointmentDisplayMode.appointment,
+                  Container(
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width,
+                      maxHeight: 250,
+                      minWidth: 200,
+                      minHeight: 200,
                     ),
-                  ),
-                ],
-              ),
-              Row(
-                children: [
-                  Text("Events"),
-                  IconButton(
-=======
-      body: SingleChildScrollView(
-        child: Center(
-          child:  Column(
-            mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  children: [
-                    IconButton(
->>>>>>> 581a2ba15728ef84c5d384d21c48ed9ddebaf5a3
-                      onPressed: (){
-                        Navigator.of(context).push(
-                            MaterialPageRoute(
-                                builder: (context) => CalendarEventForm())
-                        );
-
-                      },
-                      icon: Icon(Icons.menu),
-                    ),
-                  ],
-                ),
-                Row(
-                  children: [
+                    child:
                     SfCalendar(
                       view: CalendarView.day,
                       dataSource: EventAppointmentDataSource(_appointments),
@@ -766,62 +470,67 @@ class _HomePageState extends State<HomePage> {
                         appointmentDisplayMode: MonthAppointmentDisplayMode.appointment,
                       ),
                     ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    Text("Events"),
-                    IconButton(
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  Text("Events"),
+                  IconButton(
                       onPressed: (){
                         Navigator.of(context).push(
-                          MaterialPageRoute(
-                              builder: (context) => CalendarEventForm()),
+                            MaterialPageRoute(
+                                builder: (context) => CalendarEventForm()),
                         );
                       },
                       icon: Icon(
-                        Icons.add_circle_outline,
+                          Icons.add_circle_outline,
                       ),
-                    ),
-                  ],
-                ),
-                _quotesWidgets(),
-                Row(
-                  children: [
-                    Text("Tasks"),
-                    IconButton(
-                        onPressed: () async{
-                          final bool? shouldRefresh = await  Navigator.of(context).push(
-                              MaterialPageRoute(
-                                  builder: (context) => TaskEventForm(isPersonalTask: true) )
-                          );
-                          if (shouldRefresh != null) {
-                            handleRefresh(shouldRefresh);
-                          }
+                  ),
+                ],
+              ),
+              _quotesWidgets(),
+              Row(
+                children: [
+                  Text("Tasks"),
+                  IconButton(
+                      onPressed: () async{
+                        final bool? shouldRefresh = await  Navigator.of(context).push(
+                            MaterialPageRoute(
+                                builder: (context) => TaskEventForm(isPersonalTask: true) )
+                        );
+                        if (shouldRefresh != null) {
+                          handleRefresh(shouldRefresh);
+                        }
 
-                        },
-                        icon: Icon(Icons.add_box_rounded)
-                    ),
+                      },
+                      icon: Icon(Icons.add_box_rounded)
+                  ),
 
-                  ],
-                ),
-                _priorityDropdown(),
-                Text(_selectedPriority),
-                _segmentedButtonWidget(),
-
-
-                Text("Events"),
-                Flexible(
-                    child: events == null
-                        ? Center(child: CircularProgressIndicator())
-                        : events!.isEmpty
-                        ? Center(child: Text('No events available'))
-                        : _getEventsContainer()
-                )
-              ],
-            ),
+                ],
+              ),
+              _priorityDropdown(),
+              Text(_selectedPriority),
+              _segmentedButtonWidget(),
+              Flexible(
+                  child: tasks == null
+                      ? Center(child: CircularProgressIndicator())
+                      : tasks!.isEmpty
+                      ? Center(child: Text('No tasks available'))
+                      : _getTaskContainer()
+              ),
+              Text("Events"),
+              Flexible(
+                  child: events == null
+                      ? Center(child: CircularProgressIndicator())
+                      : events!.isEmpty
+                      ? Center(child: Text('No events available'))
+                      : _getEventsContainer()
+              )
+            ],
           ),
         ),
-
+      ),
     );
   }
 }
