@@ -1,344 +1,205 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:strive_project/pages/home_page.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:intl/intl.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
-import 'package:omni_datetime_picker/omni_datetime_picker.dart';
+import 'package:strive_project/services/index.dart';
+import 'package:strive_project/models/index.dart';
 
 
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key}) : super(key: key);
+class CalendarPage extends StatefulWidget {
+  const CalendarPage({super.key});
 
   @override
-  _MyHomePageState createState() => _MyHomePageState();
+  State<CalendarPage> createState() => _CalendarPageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  List<Meeting> meetings = <Meeting>[]; // list of all events
-  List<Meeting> eventsForSelectedDay = []; // list of events scheduled on a certain day
+class _CalendarPageState extends State<CalendarPage> {
+  EventService eventService = EventService();
+  List<Event>? events;
+  List<Appointment> _appointments = [];
+  bool isLoading = true;
+  DateTime selectedDate = DateTime.now();
+  CalendarView currentView = CalendarView.week; // current view of calendar
 
-// method to show events scheduled for selected day
-  void _eventsOfSelectedDay(DateTime selectedDay) {
-    setState(() {
-      eventsForSelectedDay = meetings
-          .where((meeting) =>
-      meeting.from.year == selectedDay.year &&
-          meeting.from.month == selectedDay.month &&
-          meeting.from.day == selectedDay.day)
-          .toList();
-    });
+  @override
+  void initState() {
+    super.initState();
+    _fetchEvent();
   }
 
-// method to display add event or add task menu
-  void _showMenu(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return Container(
-          padding: EdgeInsets.all(16.0),
-          height: 145,
-          child: Column(
+  Future<void> _fetchEvent() async {
+    eventService.setCalendarUpdateCallback((appointments) {
+      setState(() {
+        _appointments = appointments;
+      });
+    });
+
+    try {
+      // load events from firestore
+      List<Event> eventData = await eventService.getEvents();
+      setState(() {
+        events = eventData;
+        // convert firestore fetched events to api calendar appointments
+        _appointments = eventData.map((e) => e.toAppointment()).toList();
+        isLoading = false;
+      });
+    } catch (e) {
+      _showSnackBar(context, 'Error fetching events: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  void _showSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.black54,
+      ),
+    );
+  }
+
+  List<Event> _getEventsForSelectedDate() {
+    DateTime formattedSelectedDate = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
+
+    return events!.where((event) {
+      DateTime eventDate = DateFormat("yyyy-MM-dd").parse(event.date);
+      DateTime formattedEventDate = DateTime(eventDate.year, eventDate.month, eventDate.day);
+      return formattedEventDate.isAtSameMomentAs(formattedSelectedDate);
+    }).toList();
+  }
+
+  Widget _getEventsContainer() {
+    if (isLoading) {
+      return Center(child: CircularProgressIndicator());
+    }
+
+    List<Event> selectedDayEvents = _getEventsForSelectedDate();
+
+    if (selectedDayEvents.isEmpty) {
+      return Center(child: Text('No events for selected date.'));
+    }
+
+    return ListView.builder(
+      shrinkWrap: true,
+      padding: EdgeInsets.all(10),
+      itemCount: selectedDayEvents.length,
+      itemBuilder: (BuildContext context, int index) {
+        return Slidable(
+          endActionPane: ActionPane(
+            motion: DrawerMotion(),
             children: [
-              ListTile(
-                leading: Icon(Icons.add),
-                title: Text('Add Task'),
-              ),
-              ListTile(
-                leading: Icon(Icons.edit),
-                title: Text('Add Event'),
-                onTap: () async {
-                  final newEvent = await Navigator.push<Meeting>(
-                    context,
-                    MaterialPageRoute(builder: (context) => AddEvent()),
-                  );
-                  if (newEvent != null) {// add event to calendar
-                    addEvent(newEvent);
+              SlidableAction(
+                onPressed: (BuildContext context) async {
+                  try {
+                    await eventService.deleteEvent(selectedDayEvents[index].id);
+                    setState(() {
+                      events!.removeWhere((event) => event.id == selectedDayEvents[index].id);
+                      _appointments = events!.map((e) => e.toAppointment()).toList();
+                    });
+                    _showSnackBar(context, 'Event deleted');
+                  } catch (e) {
+                    _showSnackBar(context, 'Error deleting event: $e');
                   }
                 },
+                icon: Icons.delete,
+                label: 'Delete',
+                backgroundColor: Colors.redAccent,
+                foregroundColor: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              SlidableAction(
+                onPressed: (BuildContext context) async {
+
+                },
+                icon: Icons.edit,
+                label: 'Edit',
+                backgroundColor: Colors.blueGrey,
+                foregroundColor: Colors.white,
+                borderRadius: BorderRadius.circular(10),
               ),
             ],
           ),
+          child: Container(
+            margin: EdgeInsets.symmetric(vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.black12,
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: ListTile(
+              title: Text(
+                selectedDayEvents[index].title,
+                style: TextStyle(
+                  fontSize: 18,
+                  decoration: selectedDayEvents[index].status
+                      ? TextDecoration.lineThrough
+                      : TextDecoration.none,
+                ),
+              ),
+              subtitle: Text("Priority Level: ${selectedDayEvents[index].priorityLevel}"),
+            ),
+          ),
         );
       },
     );
-  }
-
-// method to add a new event to calendar
-  void addEvent(Meeting newEvent) {
-    setState(() {
-      meetings.add(newEvent);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Column(
-        children: [
-          Row(
-            children: [
-
-            ],
-          ),
-          SfCalendar(
-            view: CalendarView.week,
-            dataSource: MeetingDataSource(meetings),
-            onTap: (details) {
-              if (details.targetElement == CalendarElement.appointment) {
-                return;
-              }// show events scheduled for that day
-              _eventsOfSelectedDay(details.date!);
-            },
-            monthViewSettings: const MonthViewSettings(
-              appointmentDisplayMode: MonthAppointmentDisplayMode.appointment,
-            ),
-          ),
-          Expanded(
-            child: ListView.builder(
-                itemCount: eventsForSelectedDay.length,
-                itemBuilder: (context, index) {
-                  final event = eventsForSelectedDay[index];
-                  return Card(
-                      margin: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                      child: ListTile(
-                        title: Text(event.eventName),
-                        subtitle: Text('${event.from.toLocal()} - ${event.to.toLocal()}'),
-                        tileColor: event.background,
-                      ));
-                }
-            ),
-          )
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showMenu(context), // show menu
-        child: Icon(Icons.add),
-      ),
-    );
-  }
-}
-
-class AddEvent extends StatefulWidget {
-  const AddEvent({super.key});
-
-  @override
-  State<AddEvent> createState() => _AddEventState();
-}
-
-class _AddEventState extends State<AddEvent> {
-  final List<String> _priorityLevels = ['Low', 'Medium', 'High'];
-  String? _selectedPriorityLevel;
-  DateTime? _startDateTime;
-  DateTime? _endDateTime;
-  final TextEditingController _subject = TextEditingController();
-  late Color _color; // color changes depending on priority level
-
-// method to determine color based on priority level
-  Color _getPriorityColor(String priority) {
-    switch (priority) {
-      case 'Low':
-        return Colors.blue;
-      case 'Medium':
-        return Colors.orange;
-      case 'High':
-        return Colors.red;
-      default:
-        return Colors.blue; // default low priority
-    }
-  }
-
-// method to pick date range
-  Future<void> _selectDateRange(BuildContext context) async {
-    DateTime? startDate;
-    DateTime? endDate;
-
-// date range picker
-    List<DateTime>? dateTimeList = await showOmniDateTimeRangePicker(
-      context: context,
-      startInitialDate: DateTime.now(),
-      startFirstDate: DateTime(1600).subtract(const Duration(days: 3652)),
-      startLastDate: DateTime.now().add(const Duration(days: 3652)),
-      endInitialDate: DateTime.now(),
-      endFirstDate: DateTime(1600).subtract(const Duration(days: 3652)),
-      endLastDate: DateTime.now().add(const Duration(days: 3652)),
-      is24HourMode: false,
-      isShowSeconds: false,
-      minutesInterval: 1,
-      borderRadius: const BorderRadius.all(Radius.circular(30)),
-      constraints: const BoxConstraints(
-        maxWidth: 350,
-        maxHeight: 650,
-      ),
-      transitionBuilder: (context, anim1, anim2, child) {
-        return FadeTransition(
-          opacity: anim1.drive(
-            Tween(begin: 0, end: 1),
-          ),
-          child: child,
-        );
-      },
-      transitionDuration: const Duration(milliseconds: 200),
-      barrierDismissible: true,
-    );
-
-    if (dateTimeList != null && dateTimeList.length == 2) {
-      startDate = dateTimeList[0];
-      endDate = dateTimeList[1];
-
-// make sure endDate is after startDate
-      if (endDate.isBefore(startDate)) {
-        ScaffoldMessenger.of(context).showSnackBar( // show error if not
-          SnackBar(
-            content: Text('End date must be after start date.'),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      } else { // set start and end dates
-        setState(() {
-          _startDateTime = startDate;
-          _endDateTime = endDate;
-        });
-      }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Please select both start and end dates.'),
-          duration: Duration(seconds: 3),
-        ),
-      );
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Add Event'),
-      ),
-      body: Column(
-        children: [
-          TextFormField(
-            controller: _subject,
-            decoration: InputDecoration(
-              labelText: 'Enter title',
-            ),
-          ),
-          DropdownButton<String>(
-            value: _selectedPriorityLevel,
-            hint: const Text('Please elect a priority level'),
-            onChanged: (String? newValue) {
+        title: Text("Calendar"),
+        actions: [
+          IconButton(
+            onPressed: () {
               setState(() {
-                _selectedPriorityLevel = newValue;
-// color changes depending on selectedPriorityLevel
-                _color = _getPriorityColor(newValue!);
+                currentView = currentView == CalendarView.month
+                    ? CalendarView.week
+                    : CalendarView.month;
+                //print('Current view: $currentView');
               });
             },
-            items: _priorityLevels // display priorityLevels
-                .map<DropdownMenuItem<String>>((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(value),
-              );
-            }).toList(),
-          ),
-          Text(
-            _selectedPriorityLevel != null
-                ? 'You selected: $_selectedPriorityLevel'
-                : 'No priority selected',
-            style: const TextStyle(fontSize: 18),
-          ),
-          ElevatedButton(
-            onPressed: () => _selectDateRange(context),
-            child: const Text('Select Dates'),
-          ),
-          Text(
-            'Start Date: ${_startDateTime?.toLocal() ?? 'Not selected'}',
-            style: TextStyle(fontSize: 16),
-          ),
-          Text(
-            'End Date: ${_endDateTime?.toLocal() ?? 'Not selected'}',
-            style: TextStyle(fontSize: 16),
-          ),
-          ElevatedButton(
-            onPressed: () {
-// if all fields are filled in
-              if (_subject.text.isNotEmpty && _startDateTime != null && _endDateTime != null && _selectedPriorityLevel != null) {
-// create new meeting with passed info
-                final newMeeting = Meeting(
-                  _subject.text,
-                  _startDateTime!, // not null
-                  _endDateTime!, // not null
-                  _color,
-                  false,
-                );
-                Navigator.pop(context, newMeeting); // return to calendar screen
-              } else { // if not all fields are filled in , show message
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Please fill in all fields'),
-                    duration: Duration(seconds: 2),
-                  ),
-                );
-              }
-            },
-            child: const Text('Save Event'),
+            icon: Icon(currentView == CalendarView.month ? Icons.view_week : Icons.view_day),
           ),
         ],
       ),
+      body: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Container(
+                  child: Builder(
+                    builder: (context) {
+                      return SfCalendar(
+                        view: currentView,
+                        dataSource: EventAppointmentDataSource(_appointments),
+                        onTap: (details) {
+                          if (details.targetElement == CalendarElement.appointment) {
+                            return;
+                          }
+                          setState(() {
+                            selectedDate = details.date!;
+                          });
+                        },
+                        monthViewSettings: const MonthViewSettings(
+                          appointmentDisplayMode: MonthAppointmentDisplayMode.appointment,
+                        ),
+                        // Add more configurations here for week view if needed
+                      );
+                    }
+                ),
+                )],
+            ),
+            SizedBox(height: 20.0),
+            _getEventsContainer()
+          ],
+        ),
+      ),
     );
   }
-}
-
-// meetingDataSource class
-class MeetingDataSource extends CalendarDataSource {
-  MeetingDataSource(List<Meeting> source) {
-    appointments = source;
-  }
-
-  @override
-  DateTime getStartTime(int index) {
-    return _getMeetingData(index).from;
-  }
-
-  @override
-  DateTime getEndTime(int index) {
-    return _getMeetingData(index).to;
-  }
-
-  @override
-  String getSubject(int index) {
-    return _getMeetingData(index).eventName;
-  }
-
-  @override
-  Color getColor(int index) {
-    return _getMeetingData(index).background;
-  }
-
-  @override
-  bool isAllDay(int index) {
-    return _getMeetingData(index).isAllDay;
-  }
-
-  Meeting _getMeetingData(int index) {
-    final dynamic meeting = appointments![index];
-    late final Meeting meetingData;
-    if (meeting is Meeting) {
-      meetingData = meeting;
-    }
-
-    return meetingData;
-  }
-}
-
-// meeting class
-class Meeting {
-
-  Meeting(this.eventName, this.from, this.to, this.background, this.isAllDay);
-
-  String eventName;
-  DateTime from;
-  DateTime to;
-  Color background;
-  bool isAllDay;
 }

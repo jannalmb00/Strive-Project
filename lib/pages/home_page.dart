@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
+import 'package:syncfusion_flutter_calendar/calendar.dart';
 //page
 import 'package:strive_project/pages/index.dart';
 //service
 import 'package:strive_project/services/index.dart';
 //model
 import 'package:strive_project/models/index.dart';
-import 'package:syncfusion_flutter_calendar/calendar.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -332,13 +333,159 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Widget _missedContainer(){
+
+    List<Task> missedTasks = tasks!.where((task) {
+      try {
+        // Ensure the task has either a date or time
+        if ((task.date == null || task.date!.isEmpty) && (task.time == null || task.time!.isEmpty)) {
+          print("No date and no time");
+          return false; // Skip tasks without both date and time
+        }
+
+        DateTime now = DateTime.now();
+
+        // If task has only a time
+        if (task.date == null || task.date!.isEmpty) {
+          DateFormat timeFormat = DateFormat("hh:mm a");
+          DateTime taskTime = timeFormat.parse(task.time!);
+
+          // Create a DateTime object for today with the task's time
+          DateTime taskDateTimeToday = DateTime(now.year, now.month, now.day, taskTime.hour, taskTime.minute);
+
+          print("Task time (today): $taskDateTimeToday");
+          print("Now: $now");
+          print("Status: ${ task.status == false}");
+
+          if (taskDateTimeToday.isBefore(now) &&task.status == false) {
+            return (_selectedPriority == 'All') || (task.priorityLevel == _selectedPriority || task.status == false);
+          } else {
+            return false; // Task time is after now
+          }
+        }
+
+        // If task has only a date
+        if (task.time == null || task.time!.isEmpty) {
+          DateFormat dateFormat = DateFormat("yyyy-MM-dd");
+          DateTime taskDate = dateFormat.parse(task.date!);
+
+          print("Task date: $taskDate");
+          print(task.title);
+          print("Now: $now");
+          print("Status: ${ task.status == false}");
+
+          if (taskDate.isBefore(now) &&task.status == false) {
+            return (_selectedPriority == 'All') || (task.priorityLevel == _selectedPriority  ) ;
+          } else {
+            return false; // Task date is after today
+          }
+        }
+
+        // If task has both date and time
+        String taskDateTimeString = "${task.date!} ${task.time!}";
+        DateFormat dateTimeFormat = DateFormat("yyyy-MM-dd hh:mm a");
+        DateTime taskDateTime = dateTimeFormat.parse(taskDateTimeString);
+
+        print("Task datetime: $taskDateTime");
+        print("Now: $now");
+        print("Status: ${ task.status != false}");
+
+        if (taskDateTime.isBefore(now) && task.status == false) {
+          return (_selectedPriority == 'All') || (task.priorityLevel == _selectedPriority || task.status == false);
+        } else {
+          return false; // Task datetime is after now
+        }
+      } catch (e) {
+        print("Error parsing task date/time: $e");
+        return false; // Skip tasks with invalid date/time format
+      }
+    }).toList();
+
+
+    return ListView.builder(
+      padding: EdgeInsets.all(10),
+      itemCount: missedTasks.length,
+      itemBuilder: (BuildContext context, int index) {
+        return  Slidable(
+          endActionPane: ActionPane(
+              motion: DrawerMotion(),
+              children: [
+                SlidableAction(
+                  onPressed: (BuildContext context) async {
+                    try {
+                      await taskService.deletePersonalTask(missedTasks[index].id);
+                      setState(() {
+                        tasks!.remove(missedTasks[index]); // Remove task from list
+                      });
+                      _showSnackBar(context, 'Task deleted');
+                    } catch (e) {
+                      _showSnackBar(context, 'Error deleting task: $e');
+                    }
+                  },
+                  icon:Icons.delete,
+                  label: 'Delete',
+                  backgroundColor: Colors.redAccent,
+                  foregroundColor: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                SlidableAction(
+                  onPressed: (BuildContext context) async {
+                    startEdit(missedTasks[index]);
+
+                  },
+                  icon:Icons.edit,
+                  label: 'Edit',
+                  backgroundColor: Colors.blueGrey,
+                  foregroundColor: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                )
+              ]
+          ),
+
+          child: Container(
+            margin: EdgeInsets.symmetric(vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.black12,
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: GestureDetector(
+              onTap: () => viewTask(context,missedTasks[index] ),
+              child: ListTile(
+                title: Text(
+                  missedTasks[index].title,
+                  style: TextStyle(
+                      fontSize: 18,
+                      decoration: missedTasks[index].status
+                          ? TextDecoration.lineThrough
+                          : TextDecoration.none,
+                      color: Colors.red
+                  ),
+                ),
+                subtitle: Text("Priority Level: ${missedTasks[index].priorityLevel}",
+                  style: TextStyle(color: Colors.red),),
+                trailing: Text(missedTasks[index].date.toString(),
+                  style: TextStyle(
+                      color: Colors.red
+                  ),),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+
   Widget _getTaskContainer() {
     if (selected.contains('Todo')) {
-      // _showSnackBar(context, tasks!.length.toString());
+     // _showSnackBar(context, tasks!.length.toString());
       return _todoContainer();  // Return the Todo container
-    } else if (selected.contains('Completed')) {
-      return _completedContainer();  // Call and return the completed container
-    } else {
+    } else if (selected.contains('Missed')) {
+      return _missedContainer();// Call and return the completed container
+    } else if (selected.contains('Completed')){
+      return _completedContainer();
+
+    }
+    else {
       return Center(child: Text('No tasks available'));
     }
   }
@@ -443,96 +590,157 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Welcome, $userName"),
+        title: Text("Welcome, $userName !"),
       ),
       body: SingleChildScrollView(
         child:  Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    constraints: BoxConstraints(
-                      maxWidth: MediaQuery.of(context).size.width,
-                      maxHeight: 250,
-                      minWidth: 200,
-                      minHeight: 200,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Padding(
+                  padding: EdgeInsets.all(15.0),
+                  child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      IconButton(
+                          onPressed: (){
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                  builder: (context) => CalendarPage()),
+                            );
+                          },
+                          icon: Icon(Icons.calendar_month)
+                      ),
+                    ]),
+                ),
+                Text("Today",
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                Container(
+                  constraints: BoxConstraints(
+                    maxWidth: MediaQuery.of(context).size.width,
+                    maxHeight: 250,
+                    minWidth: 200,
+                    minHeight: 200,
+                  ),
+                  child:
+                  SfCalendar(
+                    view: CalendarView.day,
+                    dataSource: EventAppointmentDataSource(_appointments),
+                    onTap: (details) {
+                      if (details.targetElement == CalendarElement.appointment) {
+                        return;
+                      }
+                      // show events scheduled for that day
+                      //_eventsOfSelectedDay(details.date!);
+                    },
+                    monthViewSettings: const MonthViewSettings(
+                      appointmentDisplayMode: MonthAppointmentDisplayMode.appointment,
                     ),
-                    child:
-                    SfCalendar(
-                      view: CalendarView.day,
-                      dataSource: EventAppointmentDataSource(_appointments),
-                      onTap: (details) {
-                        if (details.targetElement == CalendarElement.appointment) {
-                          return;
-                        }
-                        // show events scheduled for that day
-                        //_eventsOfSelectedDay(details.date!);
+                  ),
+                ),
+              ],
+            ),
+            Padding(padding:
+            EdgeInsets.all(20.0),
+              child: Column(
+                children: [
+                  _quotesWidgets(),
+                  SizedBox(height: 30.0),
+                  Text("Tasks",
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  ]
+              ),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Padding(
+                    padding:  EdgeInsets.all(5.0),
+                child: Row(
+                  children: [
+                    Text(
+                        "Tasks",
+                    style: TextStyle(fontSize: 15),
+                    ),
+                    IconButton(
+                        onPressed: () async{
+                          final bool? shouldRefresh = await  Navigator.of(context).push(
+                              MaterialPageRoute(
+                                  builder: (context) => TaskEventForm(isPersonalTask: true) )
+                          );
+                          if (shouldRefresh != null) {
+                            handleRefresh(shouldRefresh);
+                          }
+
+                        },
+                        icon: Icon(Icons.add_circle)
+                    ),
+
+                  ],
+                ),
+                )
+              ],
+            ),
+            _segmentedButtonWidget(),
+            SizedBox(height: 20.0),
+            Text(_selectedPriority),
+            _priorityDropdown(),
+            Text(AuthService().currentUser!.uid),
+            SizedBox(height: 20.0),
+            Flexible(
+                child: tasks == null
+                    ? Center(child: CircularProgressIndicator())
+                    : tasks!.isEmpty
+                    ? Center(child: Text('No tasks available'))
+                    : _getTaskContainer()
+            ),
+            SizedBox(height: 30.0),
+            Text("Events",
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Padding(
+                  padding: EdgeInsets.all(10.0),
+                child:
+                  Row(
+                  children: [
+                    Text(
+                        "Events",
+                        style: TextStyle(fontSize: 15),
+                    ),
+                    IconButton(
+                      onPressed: (){
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                              builder: (context) => CalendarEventForm()),
+                        );
                       },
-                      monthViewSettings: const MonthViewSettings(
-                        appointmentDisplayMode: MonthAppointmentDisplayMode.appointment,
+                      icon: Icon(
+                        Icons.add_circle,
                       ),
                     ),
-                  ),
-                ],
-              ),
-              Row(
-                children: [
-                  Text("Events"),
-                  IconButton(
-                    onPressed: (){
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                            builder: (context) => CalendarEventForm()),
-                      );
-                    },
-                    icon: Icon(
-                      Icons.add_circle_outline,
-                    ),
-                  ),
-                ],
-              ),
-              _quotesWidgets(),
-              Row(
-                children: [
-                  Text("Tasks"),
-                  IconButton(
-                      onPressed: () async{
-                        final bool? shouldRefresh = await  Navigator.of(context).push(
-                            MaterialPageRoute(
-                                builder: (context) => TaskEventForm(isPersonalTask: true) )
-                        );
-                        if (shouldRefresh != null) {
-                          handleRefresh(shouldRefresh);
-                        }
-
-                      },
-                      icon: Icon(Icons.add_box_rounded)
-                  ),
-
-                ],
-              ),
-              _priorityDropdown(),
-              Text(_selectedPriority),
-              _segmentedButtonWidget(),
-              Flexible(
-                  child: tasks == null
-                      ? Center(child: CircularProgressIndicator())
-                      : tasks!.isEmpty
-                      ? Center(child: Text('No tasks available'))
-                      : _getTaskContainer()
-              ),
-              Text("Events"),
-              Flexible(
-                  child: events == null
-                      ? Center(child: CircularProgressIndicator())
-                      : events!.isEmpty
-                      ? Center(child: Text('No events available'))
-                      : _getEventsContainer()
-              )
-            ],
-          ),
+                  ],),
+                ),],
+            ),
+            Flexible(
+                child: events == null
+                    ? Center(child: CircularProgressIndicator())
+                    : events!.isEmpty
+                    ? Center(child: Text('No events available'))
+                    : _getEventsContainer()
+            )
+          ],
         ),
+      ),
 
     );
   }

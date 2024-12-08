@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:strive_project/models/index.dart';
 //service
 import 'package:strive_project/services/index.dart';
-
+import 'package:strive_project/services/event_service.dart';
 
 
 class EventService{
@@ -18,7 +18,7 @@ class EventService{
     onEventsUpdated = callback;
   }
 
-  // add event
+  // add personal task
   Future<bool> addEvent(Event event) async{
     try{
       // add to firestore db
@@ -32,7 +32,7 @@ class EventService{
       if (onEventsUpdated != null) {
         List<Event> allEvents = await getEvents();
         List<Appointment> allAppointments = allEvents.map((e) => e.toAppointment()).toList();
-        onEventsUpdated!(allAppointments);  // Update the calendar's data
+        onEventsUpdated!(allAppointments);  // update the api calendar
       }
       return  true;
     }catch(e){
@@ -54,9 +54,9 @@ class EventService{
 
       // edit in api calendar
       if (onEventsUpdated != null) {
-        List<Event> allEvents = await getEvents();  // fetch all events from Firestore
+        List<Event> allEvents = await getEvents();  // fetch events from firestore
         List<Appointment> allAppointments = allEvents.map((e) => e.toAppointment()).toList();
-        onEventsUpdated!(allAppointments);  // update calendar api
+        onEventsUpdated!(allAppointments);  // update the api calendar
       }
       return true;
     }catch(e){
@@ -79,9 +79,9 @@ class EventService{
 
       // delete in api calendar
       if (onEventsUpdated != null) {
-        List<Event> allEvents = await getEvents();  // fetch all events from Firestore
+        List<Event> allEvents = await getEvents();  // fetch events from firestore
         List<Appointment> allAppointments = allEvents.map((e) => e.toAppointment()).toList();
-        onEventsUpdated!(allAppointments);  // update calendar api 
+        onEventsUpdated!(allAppointments);  // update the api calendar
       }
     } catch (e) {
       print("Error deleting event: $e");

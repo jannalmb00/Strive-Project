@@ -5,9 +5,9 @@ import 'package:syncfusion_flutter_calendar/calendar.dart';
 import 'package:intl/intl.dart';
 
 //service
-import 'package:strive_project/services/index.dart';
+import 'package:mystrive/services/index.dart';
 //model
-import 'package:strive_project/models/index.dart';
+import 'package:mystrive/models/index.dart';
 
 class CalendarEventForm extends StatefulWidget {
   //final bool isPersonalTask;

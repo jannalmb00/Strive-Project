@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';  // api calendar
+
 class Event {
   String id;
   String title;
   String priorityLevel; // Can be 'Low', 'Medium', or 'High'
   String date;          // Required field
-  String time;          // Required field 
+  String time;          // Required field (time should be in the format "hh:mm a" or "HH:mm")
   String description;
   bool status;
 
@@ -45,38 +46,37 @@ class Event {
     );
   }
 
-  // Parse time according to Firestore 
+  // parse time
   DateTime get parsedTime {
     try {
-      // Default time 
       if (time.isEmpty || time == '0') {
         print("Invalid time format: $time");
-        return DateFormat("HH:mm").parse("00:00"); 
+        return DateFormat("HH:mm").parse("00:00");  //default midnight
       }
 
-      DateTime parsed = DateFormat("hh:mm a").parse(time);  // Parse time 12-hour
+      DateTime parsed = DateFormat("hh:mm a").parse(time); // 12 hour parsed time
       return parsed;
     } catch (e) {
       try {
-        return DateFormat("HH:mm").parse(time); // Parse time 24-hour 
+        return DateFormat("HH:mm").parse(time); // 24 hour parsed time
       } catch (e) {
         print("Error parsing time: $e");
-        return DateFormat("HH:mm").parse("00:00");  // Default time
+        return DateFormat("HH:mm").parse("00:00");
       }
     }
   }
 
-  // Convert Event to Appointment to appear in calendar api
+  // convert to api calendar appointment
   Appointment toAppointment() {
-    // Convert time
+    // convert parsed time to start time
     DateTime startTime = DateFormat("yyyy-MM-dd").parse(date).add(Duration(hours: parsedTime.hour, minutes: parsedTime.minute));
-    DateTime endTime = startTime.add(Duration(hours: 1)); 
+    DateTime endTime = startTime.add(Duration(hours: 1));
 
     return Appointment(
       startTime: startTime,
       endTime: endTime,
       subject: title,
-      color: _getPriorityColor(),  // Get priority level 
+      color: _getPriorityColor(),
     );
   }
 
@@ -90,11 +90,12 @@ class Event {
       case 'low':
         return Colors.green;
       default:
-        return Colors.blue; // Default color
+        return Colors.blue; // default color
     }
   }
 }
 
+// for calendar api
 class EventAppointmentDataSource extends CalendarDataSource {
   EventAppointmentDataSource(List<Appointment> appointments) {
     this.appointments = appointments;
