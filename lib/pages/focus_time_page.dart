@@ -63,7 +63,7 @@ class _FocusTimePageState extends State<FocusTimePage> {
           _remainingTime--;
         } else {
           _stopPomodoro(); // Stop timer when it hits 0
-
+          _playAlert();
           _startBreak();
         }
       });
@@ -92,7 +92,7 @@ class _FocusTimePageState extends State<FocusTimePage> {
         if (_remainingTime > 0) {
           _remainingTime--;
         } else {
-         
+          _playAlert();
           _endBreak(); // End the break when it hits 0
         }
       });
@@ -107,7 +107,7 @@ class _FocusTimePageState extends State<FocusTimePage> {
   }
 
   void _playAlert() async {
-    await _audioPlayer.play(AssetSource('sounds/whistle.wav'));
+    await _audioPlayer.play(AssetSource('assets/sounds/beep.mp3'));
   }
 
   // Format the time in mm:ss
@@ -143,20 +143,25 @@ class _FocusTimePageState extends State<FocusTimePage> {
   Widget _buildUIPomodoro() {
     return Column(
       children: [
-        Text('Pomodoro Timer'),
         SizedBox(height: 20),
         Text(_formatTime(_remainingTime), style: TextStyle(fontSize: 48)),
         SizedBox(height: 20),
-        ElevatedButton(
-          onPressed: isPomodoroRunning ? _stopPomodoro : _startPomodoro,
-          child: Text(isPomodoroRunning ? 'Stop' : 'Start'),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton(
+              onPressed: isPomodoroRunning ? _stopPomodoro : _startPomodoro,
+              child: Text(isPomodoroRunning ? 'Stop' : 'Start'),
+            ),
+            SizedBox(width: 20),
+            ElevatedButton(
+              onPressed: _resetPomodoro,
+              child: Text('Reset'),
+            ),
+          ],
         ),
-        ElevatedButton(
-          onPressed: _resetPomodoro,
-          child: Text('Reset'),
-        ),
+        SizedBox(height: 20),
         Text(isOnBreak ? "On break" : "Keep Working!"),
-        ElevatedButton(onPressed: _playAlert, child: Text("play alert"))
 
       ],
     );
@@ -183,7 +188,8 @@ class _FocusTimePageState extends State<FocusTimePage> {
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 10),
                     child: Text('Pomodoro'),
-                  ),Padding(
+                  ),
+                  Padding(
                     padding: EdgeInsets.symmetric(horizontal: 10),
                     child: Text('Stopwatch'),
                   )
