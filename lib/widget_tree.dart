@@ -49,7 +49,7 @@ class _WidgetTreeState extends State<WidgetTree> {
                 }
 
                 if (userSnapshot.hasData && userSnapshot.data!.exists) {
-                  return ContainerBar(); // Main app screen if user data exists
+                  return SplashScreen(); // Main app screen if user data exists
                 } else {
                   return UserDetailsPage(); // Prompt for additional details if no data exists
                 }
@@ -67,7 +67,7 @@ class _WidgetTreeState extends State<WidgetTree> {
       var userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
 
       if (userDoc.exists) {
-        return ContainerBar();  // Main content screen if user data exists
+        return SplashScreen();  // Main content screen if user data exists
       } else {
         return UserDetailsPage();  // Page to collect additional user details
       }
