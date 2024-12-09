@@ -529,7 +529,7 @@ class _SingleGroupPageState extends State<SingleGroupPage> {
       body:   Column(
               children: [
                 Text(
-                  "Files (${widget.currentGroup.groupFileName})",
+                  "File name:${widget.currentGroup.groupFileName}",
                   style: TextStyle(
                     fontSize: 30,
                     fontWeight: FontWeight.bold,
@@ -537,21 +537,27 @@ class _SingleGroupPageState extends State<SingleGroupPage> {
                 ),
                 GestureDetector(
                   onTap: () {
-
-                    Navigator.of(context).
-                    push(MaterialPageRoute(builder: (context) => FileListPage(currentGroup: widget.currentGroup,)));
-
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (context) => FileListPage(currentGroup: widget.currentGroup)),
+                    );
                   },
                   child: Container(
                     decoration: BoxDecoration(
-                      border: Border.all(
-                        color: Colors.black26
-                      ),
-                      borderRadius: BorderRadius.circular(15)
+                      color: Colors.deepPurpleAccent.shade200,
+                      borderRadius: BorderRadius.circular(20),
                     ),
-                    height: 100,
-                    width: MediaQuery.of(context).size.width,
-                    child: Center(child: Text("Click here for the files"),),
+                    height: 120,
+                    width: MediaQuery.of(context).size.width * 0.9,
+                    child: Center(
+                      child: Text(
+                        "Click here for the files",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
                 Row(

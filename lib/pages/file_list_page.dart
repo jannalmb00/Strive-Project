@@ -86,42 +86,98 @@ class _FileListPageState extends State<FileListPage> {
       setState(() {
         pickedFile = null;
       });
+      Navigator.pop(context);
+      //reloadPage();
     } catch (e) {
       print('Error uploading file: $e');
     }
   }
+  
+  
+  Future<void> deleteFile(Reference file) async {
+    try {
+      // Delete the file from Firebase Storage
+      await file.delete();
 
-  void _showAddFile(BuildContext context){
-    showModalBottomSheet(
-        context: context,
-        builder: (BuildContext context) {
-          return Expanded(
-            child:Column(
-              children: [
-                if(pickedFile != null)
-                  Expanded(child:
-                  Container(
-                    height: 50,
-                    color: Colors.blue.shade200,
-                    child: Center(
-                      child: Text(pickedFile!.name),
-                    ),
-                  )),
-                ElevatedButton(
-                    onPressed: selectFile,
-                    child: Text('Select a file')
-                ),
-                ElevatedButton(
-                    onPressed: uploadFile,
-                    child: Text('Upload a file')
-                ),
+      // After deleting the file, refresh the file list by setting the futureFiles again
+      setState(() {
+        futureFiles = FirebaseStorage.instance
+            .ref('files/${widget.currentGroup.groupFileName}/')
+            .listAll(); // Reload the file list
+      });
 
-              ],
-            ),
-          );
+      reloadPage();
 
-        });
+      // Show a success message
+      _showSnackBar(context, 'File deleted successfully');
+    } catch (e) {
+      // Handle any errors
+      _showSnackBar(context, 'Error deleting file: $e');
+    }
   }
+  
+  void reloadPage(){
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => FileListPage(currentGroup: widget.currentGroup)),
+    );
+  }
+
+
+  void _showAddFile(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      isScrollControlled: true,
+      builder: (BuildContext context) {
+        return Container(
+          width: double.infinity, // Ensures the bottom sheet takes full width
+          padding: EdgeInsets.all(16), // Adds padding for inner content
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Display selected file name if available
+              if (pickedFile != null)
+                Container(
+                  padding: EdgeInsets.all(8.0),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade200,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Center(
+                    child: Text(
+                      pickedFile!.name,
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ),
+              SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: selectFile,
+                icon: Icon(Icons.attach_file),
+                label: Text('Select a File'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                ),
+              ),
+              SizedBox(height: 8),
+              ElevatedButton.icon(
+                onPressed: uploadFile,
+                icon: Icon(Icons.upload),
+                label: Text('Upload File'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
 
   void _showSnackBar(BuildContext context, String message){
     ScaffoldMessenger.of(context).showSnackBar(
@@ -137,6 +193,9 @@ class _FileListPageState extends State<FileListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: Text('Files lists'),
+      ),
       body:FutureBuilder<ListResult>(
           future: futureFiles,
           builder: (context, snapshot){
@@ -150,10 +209,19 @@ class _FileListPageState extends State<FileListPage> {
 
                   return ListTile(
                     title: Text(file.name),
-                    trailing:
-                    IconButton(
-                        onPressed: () => launchWebsiteURL(file),
-                        icon: Icon(Icons.link_outlined)),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          onPressed: () => launchWebsiteURL(file),
+                          icon: Icon(Icons.link_outlined),
+                        ),
+                        IconButton(
+                          onPressed: () => deleteFile(file),  // Add delete functionality here
+                          icon: Icon(Icons.delete, color: Colors.red),
+                        ),
+                      ],
+                    ),
                   );
                   });
             }else if(snapshot.hasError){
@@ -165,11 +233,11 @@ class _FileListPageState extends State<FileListPage> {
               );
             }
           }),
-      floatingActionButton: IconButton(
-          onPressed: (){
-            _showAddFile(context);
-          },
-          icon: Icon(Icons.add_box_rounded)),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showAddFile(context),
+        backgroundColor: Colors.deepPurpleAccent,
+        child: Icon(Icons.add_box_rounded, color: Colors.white),
+      ),
     );
   }
 }

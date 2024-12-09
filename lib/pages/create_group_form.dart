@@ -37,8 +37,9 @@ class _CreateGroupFormPageState extends State<CreateGroupFormPage> {
 
 
 
-  Widget _entryField(String title, TextEditingController controller,  {bool isPassword = false}) {
+  Widget _entryField(String title, TextEditingController controller,  {bool isPassword = false, bool canEdit = true}) {
     return TextField(
+      enabled: canEdit,
       controller: controller,
       obscureText: isPassword,
       decoration: InputDecoration(
@@ -89,7 +90,7 @@ class _CreateGroupFormPageState extends State<CreateGroupFormPage> {
     if( groupNameController.text.isNotEmpty && groupDescriptionController.text.isNotEmpty && membersEmail.isNotEmpty && fileNameController.text.isNotEmpty){
       GroupModel editGroup = GroupModel(groupID: widget.group!.groupID, groupName:widget.group!.groupName ,
           groupDescription: groupDescriptionController.text, groupFileName: widget.group!.groupFileName , members: membersEmail);
-
+print("good");
       List<String> existingMembers = widget.group?.members ?? [];
       List<String> newMembers = membersEmail
           .where((email) => !existingMembers.contains(email))
@@ -163,9 +164,9 @@ class _CreateGroupFormPageState extends State<CreateGroupFormPage> {
           margin: EdgeInsets.all(15),
           child: Column(
             children: [
-              _entryField("Enter group name", groupNameController),
+              _entryField("Enter group name", groupNameController, canEdit: false),
               _entryField("Enter Description", groupDescriptionController),
-              _entryField("Enter group file name", fileNameController),
+              _entryField("Enter group file name", fileNameController,canEdit: false),
               SizedBox(height: 10,),
               Text('Press icon to add your friend'),
               Row(
@@ -189,7 +190,7 @@ class _CreateGroupFormPageState extends State<CreateGroupFormPage> {
                     }
 
                   },
-                  child: Text('Create')
+                  child: Text(widget.group == null ? 'Create' : 'Edit')
               ),
           Expanded(
             child: ListView.builder(
