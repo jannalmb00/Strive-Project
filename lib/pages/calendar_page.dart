@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
+import 'package:strive_project/models/index.dart';
+import 'package:strive_project/services/index.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
-import 'package:raeestrivetwo/services/index.dart';
-import 'package:raeestrivetwo/models/index.dart';
-import 'package:raeestrivetwo/pages/index.dart';
+import 'package:strive_project/services/index.dart';
+import 'package:strive_project/models/index.dart';
+import 'package:strive_project/pages/index.dart';
 
 
 class CalendarPage extends StatefulWidget {

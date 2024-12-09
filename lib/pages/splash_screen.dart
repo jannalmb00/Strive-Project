@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 
 //page
-import 'package:raeestrivetwo/pages/index.dart';
+import 'package:strive_project/pages/index.dart';
 
 
 class SplashScreen extends StatefulWidget {

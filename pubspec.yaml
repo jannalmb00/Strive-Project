@@ -75,6 +75,7 @@ dev_dependencies:
 flutter:
   assets:
     - assets/sounds/whistle.wav
+    - assets/images/flaticon_bird_flying.png
 
 
   # The following line ensures that the Material Icons font is

@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:strive_project/pages/splash_screen.dart';
 //srvice
 import 'package:strive_project/services/index.dart';
 //page

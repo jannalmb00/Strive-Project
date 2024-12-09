@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:strive_project/models/event_model.dart';
 import 'package:strive_project/services/event_service.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
