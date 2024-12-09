@@ -13,15 +13,13 @@ class FocusTimePage extends StatefulWidget {
 class _FocusTimePageState extends State<FocusTimePage> {
   Stopwatch _stopwatch = Stopwatch();
   late final Ticker _ticker;
-  bool showPomodoro = true;
+  bool showTimer = true;
 
-  Timer? _pomodoroTimer;
+  late Timer _timer;
+  int _seconds = 0; // To store seconds
+  String _input = ''; // To store user input
+  bool _isTimerActive = false;
 
-  static const int pomodoroDuration = 20; // 25 minutes in seconds
-  static const int breakDuration = 5 * 60; // 5 minutes in seconds
-  int _remainingTime = pomodoroDuration;
-  bool isPomodoroRunning = false;
-  bool isOnBreak = false;
 
   AudioPlayer _audioPlayer = AudioPlayer();
 
@@ -33,6 +31,14 @@ class _FocusTimePageState extends State<FocusTimePage> {
       // Triggers a rebuild every tick to show elapsed time
       setState(() {});
     });
+  }
+
+  @override
+  void dispose() {
+    if (_timer.isActive) {
+      _timer.cancel(); // Clean up the timer when the widget is disposed
+    }
+    super.dispose();
   }
 
 
@@ -51,60 +57,58 @@ class _FocusTimePageState extends State<FocusTimePage> {
     setState(() {});
   }
 
-  // Pomodoro logic
-  void _startPomodoro() {
-    if (_remainingTime == 0) {
-      _remainingTime = pomodoroDuration;
+  //timer
+  void startTimer() {
+    if (_input.isEmpty) return; // Ensure input is not empty
+    int minutes = int.tryParse(_input) ?? 0;
+    _seconds = minutes * 60; // Convert minutes to seconds
+
+    if (_seconds > 0) {
+      setState(() {
+        _isTimerActive = true;
+      });
+      _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+        if (_seconds > 0) {
+          setState(() {
+            _seconds--;
+          });
+        } else {
+          _timer.cancel(); // Stop the timer when seconds reach 0
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Text('Time\'s Up!'),
+              content: Text('The timer has finished.'),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text('OK'),
+                ),
+              ],
+            ),
+          );
+          setState(() {
+            _isTimerActive = false;
+          });
+        }
+      });
     }
-    isPomodoroRunning = true;
-    _pomodoroTimer = Timer.periodic(Duration(seconds: 1), (timer) {
-      setState(() {
-        if (_remainingTime > 0) {
-          _remainingTime--;
-        } else {
-          _stopPomodoro(); // Stop timer when it hits 0
-          _playAlert();
-          _startBreak();
-        }
-      });
-    });
   }
 
-  void _stopPomodoro() {
-    _pomodoroTimer?.cancel(); // Cancel the timer
-    isPomodoroRunning = false;
-  }
-
-  void _resetPomodoro() {
-    _remainingTime = pomodoroDuration;
-    setState(() {}); // Reset Pomodoro time
-  }
-
-  void _startBreak() {
+  void resetTimer() {
+    if (_timer.isActive) {
+      _timer.cancel();
+    }
     setState(() {
-      isOnBreak = true;
-      _remainingTime = breakDuration; // Set break time to 5 minutes
-    });
-
-    // Start the break countdown
-    _pomodoroTimer = Timer.periodic(Duration(seconds: 1), (timer) {
-      setState(() {
-        if (_remainingTime > 0) {
-          _remainingTime--;
-        } else {
-          _playAlert();
-          _endBreak(); // End the break when it hits 0
-        }
-      });
+      _seconds = 0;
+      _input = '';
+      _isTimerActive = false;
     });
   }
 
-  void _endBreak() {
-    setState(() {
-      isOnBreak = false;
-      _remainingTime = pomodoroDuration; // Reset for next Pomodoro session
-    });
-  }
+
 
   void _playAlert() async {
     await _audioPlayer.play(AssetSource('assets/sounds/beep.mp3'));
@@ -148,32 +152,55 @@ class _FocusTimePageState extends State<FocusTimePage> {
     );
   }
 
-  Widget _buildUIPomodoro() {
+  Widget _buildUITimer() {
     return Column(
-      children: [
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: <Widget>[
+        // TextField for user input to set the timer
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          child: TextField(
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              labelText: 'Enter time in minutes',
+              border: OutlineInputBorder(),
+            ),
+            onChanged: (value) {
+              setState(() {
+                _input = value;
+              });
+            },
+          ),
+        ),
         SizedBox(height: 20),
-        Text(_formatTime(_remainingTime), style: TextStyle(fontSize: 48)),
+
+        Text(
+          _isTimerActive
+              ? 'Time Remaining: ${_seconds ~/ 60} minute(s) ${_seconds % 60} second(s)'
+              : 'Enter the time and start the timer',
+          style: TextStyle(fontSize: 24),
+        ),
         SizedBox(height: 20),
+
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             ElevatedButton(
-              onPressed: isPomodoroRunning ? _stopPomodoro : _startPomodoro,
-              child: Text(isPomodoroRunning ? 'Stop' : 'Start'),
+              onPressed: _isTimerActive ? null : startTimer, // Disable button if timer is active
+              child: Text('Start Timer'),
             ),
             SizedBox(width: 20),
             ElevatedButton(
-              onPressed: _resetPomodoro,
-              child: Text('Reset'),
+              onPressed: resetTimer,
+              child: Text('Reset Timer'),
             ),
           ],
         ),
-        SizedBox(height: 20),
-        Text(isOnBreak ? "On break" : "Keep Working!"),
-
       ],
     );
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -186,10 +213,10 @@ class _FocusTimePageState extends State<FocusTimePage> {
           child: Column(
             children: [
               ToggleButtons(
-                isSelected: [showPomodoro, !showPomodoro],
+                isSelected: [showTimer, !showTimer],
                 onPressed: (index) {
                   setState(() {
-                    showPomodoro = index == 0;
+                    showTimer = index == 0;
                   });
                 },
                 children: [
@@ -204,7 +231,7 @@ class _FocusTimePageState extends State<FocusTimePage> {
                 ],
               ),
               SizedBox(height: 10,),
-              showPomodoro ? _buildUIPomodoro() : _buildUIStopwatch(),
+              showTimer ? _buildUITimer() : _buildUIStopwatch(),
             ],
           ),
         ),
