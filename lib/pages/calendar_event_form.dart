@@ -5,9 +5,9 @@ import 'package:syncfusion_flutter_calendar/calendar.dart';
 import 'package:intl/intl.dart';
 
 //service
-import 'package:raeestrivetwo/services/index.dart';
+import 'package:strive_project/services/index.dart';
 //model
-import 'package:raeestrivetwo/models/index.dart';
+import 'package:strive_project/services/index.dart';
 
 class CalendarEventForm extends StatefulWidget {
   final Event? event;//optiona;
