@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
-import 'package:strive_project/services/theme_service.dart';
+//import 'package:strive_project/services/theme_service.dart';
 
 //model
 import 'package:strive_project/models/index.dart';
@@ -111,24 +111,29 @@ class _AccountPageState extends State<AccountPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    "Dark Mode",
-                    style: TextStyle(fontSize: 24),
-                  ),
-                  SizedBox(width: 20),
-                  Switch(
-                    value: Provider.of<ThemeService>(context).getTheme.brightness == Brightness.dark,
-                    onChanged: (bool value) {
-                      Provider.of<ThemeService>(context, listen: false).toggleTheme();
+                  DropdownButton<String>(
+                    value: 'Light',
+                    items: <String>['Light', 'Dark']
+                        .map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      if (newValue != null) { // change theme depending on selected value
+                        Provider.of<ThemeService>(context, listen: false)
+                            .setTheme(newValue);
+                      }
                     },
-                  ),
-                ],
-              ),
+                  )
+          ],
+        ),
               SizedBox(height: 20),
               Container(
                 padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
                 decoration: BoxDecoration(
-                  //color: Colors.purple.shade50,
+                  color: Colors.purple.shade50,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
@@ -148,7 +153,7 @@ class _AccountPageState extends State<AccountPage> {
               Container(
                 padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
                 decoration: BoxDecoration(
-                  //color: Colors.purple.shade50,
+                  color: Colors.purple.shade50,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
@@ -168,7 +173,7 @@ class _AccountPageState extends State<AccountPage> {
               Container(
                 padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
                 decoration: BoxDecoration(
-                  //color: Colors.purple.shade50,
+                  color: Colors.purple.shade50,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
@@ -199,4 +204,3 @@ class _AccountPageState extends State<AccountPage> {
     );
   }
 }
-

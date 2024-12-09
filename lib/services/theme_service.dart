@@ -3,10 +3,13 @@ import 'package:flutter/material.dart';
 class ThemeService with ChangeNotifier {
   ThemeData _themeData;
 
-  ThemeService(this._themeData);
+  // constructor with light mode as default theme
+  ThemeService() : _themeData = _lightTheme();
 
+  // get theme
   ThemeData get getTheme => _themeData;
 
+  // toggle between themes
   void toggleTheme() {
     if (_themeData.brightness == Brightness.dark) {
       _themeData = _lightTheme();
@@ -16,8 +19,22 @@ class ThemeService with ChangeNotifier {
     notifyListeners();
   }
 
+  // switch themes
+  void setTheme(String theme) {
+    switch (theme) {
+      case 'Dark':
+        _themeData = _darkTheme();
+        break;
+      case 'Light':
+      default:
+        _themeData = _lightTheme();
+        break;
+    }
+    notifyListeners();
+  }
+
   // light theme
-  ThemeData _lightTheme() {
+  static ThemeData _lightTheme() {
     return ThemeData(
       primaryColor: Color(0xFF171D1E),
       scaffoldBackgroundColor: Colors.white,
@@ -30,9 +47,9 @@ class ThemeService with ChangeNotifier {
         textTheme: ButtonTextTheme.primary,
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: Colors.deepPurpleAccent,
-        iconTheme: IconThemeData(color: Colors.deepPurple),
-        titleTextStyle: TextStyle(color: Colors.deepPurple),
+        backgroundColor: Colors.white,
+        iconTheme: IconThemeData(color: Colors.blueGrey),
+        titleTextStyle: TextStyle(color: Colors.black),
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: Color(0xFFF8C9D4),
@@ -49,10 +66,9 @@ class ThemeService with ChangeNotifier {
     );
   }
 
-
   // dark theme
-  ThemeData _darkTheme() {
-    return ThemeData.dark().copyWith(
+  static ThemeData _darkTheme() {
+    return ThemeData(
       primaryColor: Color(0xFF171D1E),
       scaffoldBackgroundColor: Color(0xFFB1BBCF),
       colorScheme: ColorScheme.fromSeed(
@@ -65,16 +81,19 @@ class ThemeService with ChangeNotifier {
         titleTextStyle: TextStyle(color: Colors.white),
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: Color(0xFF333333),
+        backgroundColor: Colors.black,
         selectedItemColor: Colors.deepPurpleAccent,
-        unselectedItemColor: Colors.white70,
+        unselectedItemColor: Colors.deepPurple,
         showUnselectedLabels: true,
-        selectedLabelStyle: TextStyle(color: Colors.white),
-        unselectedLabelStyle: TextStyle(color: Colors.white70),
+        selectedLabelStyle: TextStyle(color: Colors.deepPurple),
+        unselectedLabelStyle: TextStyle(color: Colors.deepPurple),
       ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.deepPurpleAccent,
+            foregroundColor: Colors.white,
+          ),
+        )
     );
   }
-
-
 }
-

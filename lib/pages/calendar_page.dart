@@ -2,12 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
-// services
-import 'package:strive_project/services/index.dart';
-// models
-import 'package:strive_project/models/index.dart';
-// pages
-import 'package:strive_project/pages/index.dart';
+import 'package:raeestrivetwo/services/index.dart';
+import 'package:raeestrivetwo/models/index.dart';
+import 'package:raeestrivetwo/pages/index.dart';
 
 
 class CalendarPage extends StatefulWidget {
@@ -19,11 +16,11 @@ class CalendarPage extends StatefulWidget {
 
 class _CalendarPageState extends State<CalendarPage> {
   EventService eventService = EventService();
-  List<Event> events = [];  // Initialize as empty list instead of nullable
-  List<Appointment> _appointments = [];  // Initialize as empty list instead of nullable
+  List<Event> events = [];
+  List<Appointment> _appointments = [];
   bool isLoading = true;
   DateTime selectedDate = DateTime.now();
-  CalendarView currentView = CalendarView.week;
+  //CalendarView currentView = CalendarView.week;
 
   @override
   void initState() {
@@ -175,18 +172,6 @@ class _CalendarPageState extends State<CalendarPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text("Calendar"),
-        actions: [
-          IconButton(
-            onPressed: () {
-              setState(() {
-                currentView = currentView == CalendarView.month
-                    ? CalendarView.week
-                    : CalendarView.month;
-              });
-            },
-            icon: Icon(currentView == CalendarView.month ? Icons.view_week : Icons.view_day),
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -198,7 +183,7 @@ class _CalendarPageState extends State<CalendarPage> {
                   child: Builder(
                       builder: (context) {
                         return SfCalendar(
-                          view: currentView,
+                          view: CalendarView.month,
                           dataSource: EventAppointmentDataSource(_appointments),
                           onTap: (details) {
                             if (details.targetElement == CalendarElement.appointment) {
@@ -215,28 +200,54 @@ class _CalendarPageState extends State<CalendarPage> {
                       }
                   ),
                 ),
-                /*Row(
-                  children: [
-                    Text(
-                      "Events",
-                      style: TextStyle(fontSize: 15),
-                    ),
-                    IconButton(
-                      onPressed: (){
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                              builder: (context) => CalendarEventForm()),
-                        );
-                      },
-                      icon: Icon(
-                        Icons.add_circle,
-                      ),
-                    ),
-                  ],
-                ),*/
               ],
             ),
-            Row(
+            Padding(
+              padding: EdgeInsets.all(20.0),
+              child: Container(
+                padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                decoration: BoxDecoration(
+                  color: Colors.purple.shade50,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.event, color: Colors.blue, size: 30),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'EVENTS',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.all(10.0),
+                          child: Row(
+                            children: [
+                              IconButton(
+                                onPressed: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) => CalendarEventForm(),
+                                    ),
+                                  );
+                                },
+                                icon: Icon(Icons.add_circle),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            /*Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 Padding(
@@ -261,8 +272,7 @@ class _CalendarPageState extends State<CalendarPage> {
                       ),
                     ],),
                 ),],
-            ),
-            SizedBox(height: 20.0),
+            ),*/
             _getEventsContainer()
           ],
         ),

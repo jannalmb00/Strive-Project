@@ -233,7 +233,6 @@ class _HomePageState extends State<HomePage> {
                 SlidableAction(
                   onPressed: (BuildContext context) async {
                     startEdit(incompleteTasks[index]);
-
                   },
                   icon:Icons.edit,
                   label: 'Edit',
@@ -669,24 +668,69 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
 
-            // quotes section
+            // quotes & tasks section
             Padding(
               padding: EdgeInsets.all(20.0),
               child: Column(
                 children: [
+                  // quotes
                   _quotesWidgets(),
                   SizedBox(height: 30.0),
-                  Text(
-                    "Tasks",
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  // tasks
+                  Container(
+                    padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.purple.shade50,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.task_rounded, color: Colors.blue, size: 30),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'TASKS',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.all(5.0),
+                              child: Row(
+                                children: [
+                                  /*Text(
+                                    "Add Task",
+                                    style: TextStyle(fontSize: 15),
+                                  ),*/
+                                  IconButton(
+                                    onPressed: () async {
+                                      final bool? shouldRefresh = await Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (context) => TaskEventForm(isPersonalTask: true),
+                                        ),
+                                      );
+                                      if (shouldRefresh != null) {
+                                        handleRefresh(shouldRefresh);
+                                      }
+                                    },
+                                    icon: Icon(Icons.add_circle),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
 
-            // tasks section
             // add task button
-            Row(
+            /*Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 Padding(
@@ -714,7 +758,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               ],
-            ),
+            ),*/
             _segmentedButtonWidget(),
             SizedBox(height: 20.0),
             Text(_selectedPriority),
@@ -732,13 +776,57 @@ class _HomePageState extends State<HomePage> {
             SizedBox(height: 30.0),
 
             // events section
-            Text(
-              "Events",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            Padding(
+            padding: EdgeInsets.all(20.0),
+            child: Container(
+              padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+              decoration: BoxDecoration(
+                color: Colors.purple.shade50,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.event, color: Colors.blue, size: 30),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'EVENTS',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.all(10.0),
+                        child: Row(
+                          children: [
+                            /*Text(
+                              "Add Event",
+                              style: TextStyle(fontSize: 15),
+                            ),*/
+                            IconButton(
+                              onPressed: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => CalendarEventForm(),
+                                  ),
+                                );
+                              },
+                              icon: Icon(Icons.add_circle),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
+          ),
 
             // add event button
-            Row(
+            /*Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 Padding(
@@ -763,7 +851,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               ],
-            ),
+            ),*/
 
             // list of events
             Flexible(
@@ -779,3 +867,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
+
+
+
