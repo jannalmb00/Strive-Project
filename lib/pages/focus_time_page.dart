@@ -124,18 +124,26 @@ class _FocusTimePageState extends State<FocusTimePage> {
   Widget _buildUIStopwatch(){
     return Column(
       children: [
+        SizedBox(height: 20),
         ElevatedButton(
             onPressed:_startStopwatch,
             child: Text('Start')
         ),
-        Text("${_stopwatch.elapsed.inSeconds} seconds"),
-        ElevatedButton(
-            onPressed: _stopStopwatch,
-            child: Text('Stop')
+        Text("${_stopwatch.elapsed.inSeconds} seconds", style: TextStyle(fontSize: 48)),
+        SizedBox(height: 20),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton(
+                onPressed: _stopStopwatch,
+                child: Text('Stop')
+            ),
+            SizedBox(width: 20),
+            ElevatedButton(
+                onPressed: _resetStopwatch,
+                child: Text('Reset'))
+          ],
         ),
-        ElevatedButton(
-            onPressed: _resetStopwatch,
-            child: Text('Reset'))
       ],
     );
   }

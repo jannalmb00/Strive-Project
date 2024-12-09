@@ -10,6 +10,7 @@ export 'account_page.dart';
 export 'container_nav_bar.dart';
 
 //secondary pages
+export 'calendar_event_form.dart';
 export 'calendar_page.dart';
 export 'single_group_page.dart';
 export 'file_list_page.dart';

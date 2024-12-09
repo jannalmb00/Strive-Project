@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import 'package:strive_project/services/theme_service.dart';
 
 //model
 import 'package:strive_project/models/index.dart';
@@ -68,8 +70,6 @@ class _AccountPageState extends State<AccountPage> {
     );
   }
 
-
-
   void _showSnackBar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -91,25 +91,112 @@ class _AccountPageState extends State<AccountPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Account'),
+        centerTitle: true,
       ),
       body: isLoading
           ? Center(child: CircularProgressIndicator())
-          : Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('Name: ${userName ?? 'Guest'}'),
-            Text('School name: ${schoolName ?? 'Not entered'}'),
-            Text(user?.email ?? 'User email'),
-            ElevatedButton(
-              onPressed: signOut,
-              child: Text("Signout"),
-            ),
-            SizedBox(height: 10,),
-
-          ],
+          : Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                radius: 50,
+                backgroundColor: Colors.blueGrey,
+                child: Icon(Icons.person, size: 50, color: Colors.white),
+              ),
+              SizedBox(height: 40),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "Dark Mode",
+                    style: TextStyle(fontSize: 24),
+                  ),
+                  SizedBox(width: 20),
+                  Switch(
+                    value: Provider.of<ThemeService>(context).getTheme.brightness == Brightness.dark,
+                    onChanged: (bool value) {
+                      Provider.of<ThemeService>(context, listen: false).toggleTheme();
+                    },
+                  ),
+                ],
+              ),
+              SizedBox(height: 20),
+              Container(
+                padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                decoration: BoxDecoration(
+                  //color: Colors.purple.shade50,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.person, color: Colors.blue, size: 30),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        '${userName ?? 'Guest'}',
+                        style: TextStyle(fontSize: 18),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 15),
+              Container(
+                padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                decoration: BoxDecoration(
+                  //color: Colors.purple.shade50,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.school, color: Colors.blue, size: 30),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        '${schoolName ?? 'Not entered'}',
+                        style: TextStyle(fontSize: 18),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 15),
+              Container(
+                padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                decoration: BoxDecoration(
+                  //color: Colors.purple.shade50,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.email, color: Colors.blue, size: 30),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        user?.email ?? 'User email',
+                        style: TextStyle(fontSize: 18),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: signOut,
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+                ),
+                child: Text("Sign Out", style: TextStyle(fontSize: 18)),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
+

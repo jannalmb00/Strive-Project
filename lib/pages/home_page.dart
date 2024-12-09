@@ -122,10 +122,22 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // edit task
   void startEdit(Task task) async{
     final bool? shouldRefresh = await Navigator.of(context).push(
         MaterialPageRoute(
             builder: (context) => TaskEventForm(isPersonalTask: true, task: task,) )
+    );
+    if(shouldRefresh != null){
+      handleRefresh(shouldRefresh);
+    }
+  }
+
+  // edit event
+  void eventEdit(Event event) async{
+    final bool? shouldRefresh = await Navigator.of(context).push(
+        MaterialPageRoute(
+            builder: (context) => CalendarEventForm(event: event))
     );
     if(shouldRefresh != null){
       handleRefresh(shouldRefresh);
@@ -138,6 +150,7 @@ class _HomePageState extends State<HomePage> {
       setState(() {
 
         _fetchTask();
+        _fetchEvent();
       });
     }
   }
@@ -333,12 +346,12 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _missedContainer(){
-
+  Widget _missedContainer() {
     List<Task> missedTasks = tasks!.where((task) {
       try {
         // Ensure the task has either a date or time
-        if ((task.date == null || task.date!.isEmpty) && (task.time == null || task.time!.isEmpty)) {
+        if ((task.date == null || task.date!.isEmpty) &&
+            (task.time == null || task.time!.isEmpty)) {
           print("No date and no time");
           return false; // Skip tasks without both date and time
         }
@@ -351,14 +364,17 @@ class _HomePageState extends State<HomePage> {
           DateTime taskTime = timeFormat.parse(task.time!);
 
           // Create a DateTime object for today with the task's time
-          DateTime taskDateTimeToday = DateTime(now.year, now.month, now.day, taskTime.hour, taskTime.minute);
+          DateTime taskDateTimeToday = DateTime(
+              now.year, now.month, now.day, taskTime.hour, taskTime.minute);
 
           print("Task time (today): $taskDateTimeToday");
           print("Now: $now");
           print("Status: ${ task.status == false}");
 
-          if (taskDateTimeToday.isBefore(now) &&task.status == false) {
-            return (_selectedPriority == 'All') || (task.priorityLevel == _selectedPriority || task.status == false);
+          if (taskDateTimeToday.isBefore(now) && task.status == false) {
+            return (_selectedPriority == 'All') ||
+                (task.priorityLevel == _selectedPriority ||
+                    task.status == false);
           } else {
             return false; // Task time is after now
           }
@@ -374,8 +390,9 @@ class _HomePageState extends State<HomePage> {
           print("Now: $now");
           print("Status: ${ task.status == false}");
 
-          if (taskDate.isBefore(now) &&task.status == false) {
-            return (_selectedPriority == 'All') || (task.priorityLevel == _selectedPriority  ) ;
+          if (taskDate.isBefore(now) && task.status == false) {
+            return (_selectedPriority == 'All') ||
+                (task.priorityLevel == _selectedPriority);
           } else {
             return false; // Task date is after today
           }
@@ -391,7 +408,8 @@ class _HomePageState extends State<HomePage> {
         print("Status: ${ task.status != false}");
 
         if (taskDateTime.isBefore(now) && task.status == false) {
-          return (_selectedPriority == 'All') || (task.priorityLevel == _selectedPriority || task.status == false);
+          return (_selectedPriority == 'All') ||
+              (task.priorityLevel == _selectedPriority || task.status == false);
         } else {
           return false; // Task datetime is after now
         }
@@ -406,23 +424,25 @@ class _HomePageState extends State<HomePage> {
       padding: EdgeInsets.all(10),
       itemCount: missedTasks.length,
       itemBuilder: (BuildContext context, int index) {
-        return  Slidable(
+        return Slidable(
           endActionPane: ActionPane(
               motion: DrawerMotion(),
               children: [
                 SlidableAction(
                   onPressed: (BuildContext context) async {
                     try {
-                      await taskService.deletePersonalTask(missedTasks[index].id);
+                      await taskService.deletePersonalTask(
+                          missedTasks[index].id);
                       setState(() {
-                        tasks!.remove(missedTasks[index]); // Remove task from list
+                        tasks!.remove(
+                            missedTasks[index]); // Remove task from list
                       });
                       _showSnackBar(context, 'Task deleted');
                     } catch (e) {
                       _showSnackBar(context, 'Error deleting task: $e');
                     }
                   },
-                  icon:Icons.delete,
+                  icon: Icons.delete,
                   label: 'Delete',
                   backgroundColor: Colors.redAccent,
                   foregroundColor: Colors.white,
@@ -431,9 +451,8 @@ class _HomePageState extends State<HomePage> {
                 SlidableAction(
                   onPressed: (BuildContext context) async {
                     startEdit(missedTasks[index]);
-
                   },
-                  icon:Icons.edit,
+                  icon: Icons.edit,
                   label: 'Edit',
                   backgroundColor: Colors.blueGrey,
                   foregroundColor: Colors.white,
@@ -448,8 +467,8 @@ class _HomePageState extends State<HomePage> {
               color: Colors.black12,
               borderRadius: BorderRadius.circular(15),
             ),
-            child: GestureDetector(
-              onTap: () => viewTask(context,missedTasks[index] ),
+            /*child: GestureDetector(
+              onTap: () => viewTask(context, missedTasks[index]),
               child: ListTile(
                 title: Text(
                   missedTasks[index].title,
@@ -461,130 +480,132 @@ class _HomePageState extends State<HomePage> {
                       color: Colors.red
                   ),
                 ),
-                subtitle: Text("Priority Level: ${missedTasks[index].priorityLevel}",
+                subtitle: Text(
+                  "Priority Level: ${missedTasks[index].priorityLevel}",
                   style: TextStyle(color: Colors.red),),
                 trailing: Text(missedTasks[index].date.toString(),
                   style: TextStyle(
                       color: Colors.red
                   ),),
               ),
-            ),
+            ),*/
           ),
         );
       },
     );
-
-
-  Widget _getTaskContainer() {
-    if (selected.contains('Todo')) {
-     // _showSnackBar(context, tasks!.length.toString());
-      return _todoContainer();  // Return the Todo container
-    } else if (selected.contains('Missed')) {
-      return _missedContainer();// Call and return the completed container
-    } else if (selected.contains('Completed')){
-      return _completedContainer();
-
-    }
-    else {
-      return Center(child: Text('No tasks available'));
-    }
   }
 
-  Widget _getEventsContainer() {
-    if (_fetchEvent() == null || events!.isEmpty) {
-      return Center(child: Text('No events available.'));
+
+    Widget _getTaskContainer() {
+      if (selected.contains('Todo')) {
+        // _showSnackBar(context, tasks!.length.toString());
+        return _todoContainer();  // Return the Todo container
+      } else if (selected.contains('Missed')) {
+        return _missedContainer();// Call and return the completed container
+      } else if (selected.contains('Completed')){
+        return _completedContainer();
+
+      }
+      else {
+        return Center(child: Text('No tasks available'));
+      }
     }
 
-    List<Event> upcomingEvents = events!.where((event) => event.status == false).toList();
+    Widget _getEventsContainer() {
+      if (_fetchEvent() == null || events!.isEmpty) {
+        return Center(child: Text('No events available.'));
+      }
 
-    return ListView.builder(
-      shrinkWrap: true,
-      padding: EdgeInsets.all(10),
-      itemCount: upcomingEvents.length,
-      itemBuilder: (BuildContext context, int index) {
-        return Slidable(
-          endActionPane: ActionPane(
-            motion: DrawerMotion(),
-            children: [
-              SlidableAction(
-                onPressed: (BuildContext context) async {
-                  try {
-                    await eventService.deleteEvent(upcomingEvents[index].id);
-                    setState(() {
-                      events!.removeWhere((event) => event.id == upcomingEvents[index].id);
-                      // update calendar after deleting event
-                      _appointments = events!.map((e) => e.toAppointment()).toList();
-                    });
-                    _showSnackBar(context, 'Event deleted');
-                  } catch (e) {
-                    _showSnackBar(context, 'Error deleting event: $e');
-                  }
-                },
-                icon: Icons.delete,
-                label: 'Delete',
-                backgroundColor: Colors.redAccent,
-                foregroundColor: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              SlidableAction(
-                onPressed: (BuildContext context) async {
+      List<Event> upcomingEvents = events!.where((event) => event.status == false).toList();
 
-                },
-                icon: Icons.edit,
-                label: 'Edit',
-                backgroundColor: Colors.blueGrey,
-                foregroundColor: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ],
-          ),
-          child: Container(
-            margin: EdgeInsets.symmetric(vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.black12,
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: ListTile(
-              title: Text(
-                upcomingEvents[index].title,
-                style: TextStyle(
-                  fontSize: 18,
-                  decoration: upcomingEvents[index].status
-                      ? TextDecoration.lineThrough
-                      : TextDecoration.none,
+      return ListView.builder(
+        shrinkWrap: true,
+        padding: EdgeInsets.all(10),
+        itemCount: upcomingEvents.length,
+        itemBuilder: (BuildContext context, int index) {
+          return Slidable(
+            endActionPane: ActionPane(
+              motion: DrawerMotion(),
+              children: [
+                SlidableAction(
+                  onPressed: (BuildContext context) async {
+                    try {
+                      await eventService.deleteEvent(upcomingEvents[index].id);
+                      setState(() {
+                        events!.removeWhere((event) => event.id == upcomingEvents[index].id);
+                        // update calendar after deleting event
+                        _appointments = events!.map((e) => e.toAppointment()).toList();
+                      });
+                      _showSnackBar(context, 'Event deleted');
+                    } catch (e) {
+                      _showSnackBar(context, 'Error deleting event: $e');
+                    }
+                  },
+                  icon: Icons.delete,
+                  label: 'Delete',
+                  backgroundColor: Colors.redAccent,
+                  foregroundColor: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
                 ),
-              ),
-              subtitle: Text("Priority Level: ${upcomingEvents[index].priorityLevel}"),
+                SlidableAction(
+                  onPressed: (BuildContext context) async {
+                    eventEdit(upcomingEvents[index]);
+                  },
+                  icon: Icons.edit,
+                  label: 'Edit',
+                  backgroundColor: Colors.blueGrey,
+                  foregroundColor: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ],
             ),
-          ),
-        );
-      },
-    );
-  }
-
-
-  Widget _priorityDropdown(){
-    final priorities = ['All', 'High', 'Mid', 'Low'];
-
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: DropdownButtonFormField<String>(
-        value: _selectedPriority,
-        items: priorities
-            .map((priority) =>
-            DropdownMenuItem(value: priority, child: Text(priority)))
-            .toList(),
-        onChanged: (value) {
-          setState(() {
-            _selectedPriority = value!;
-
-          });
+            child: Container(
+              margin: EdgeInsets.symmetric(vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.black12,
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: ListTile(
+                title: Text(
+                  upcomingEvents[index].title,
+                  style: TextStyle(
+                    fontSize: 18,
+                    decoration: upcomingEvents[index].status
+                        ? TextDecoration.lineThrough
+                        : TextDecoration.none,
+                  ),
+                ),
+                subtitle: Text("Date: ${upcomingEvents[index].date}"),
+              ),
+            ),
+          );
         },
-        decoration: InputDecoration(labelText: "Filter by Priority"),
-      ),
-    );
+      );
+    }
 
-  }
+
+    Widget _priorityDropdown(){
+      final priorities = ['All', 'High', 'Mid', 'Low'];
+
+      return Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: DropdownButtonFormField<String>(
+          value: _selectedPriority,
+          items: priorities
+              .map((priority) =>
+              DropdownMenuItem(value: priority, child: Text(priority)))
+              .toList(),
+          onChanged: (value) {
+            setState(() {
+              _selectedPriority = value!;
+
+            });
+          },
+          decoration: InputDecoration(labelText: "Filter by Priority"),
+        ),
+      );
+
+    }
 
   @override
   Widget build(BuildContext context) {
@@ -593,28 +614,32 @@ class _HomePageState extends State<HomePage> {
         title: Text("Welcome, $userName !"),
       ),
       body: SingleChildScrollView(
-        child:  Column(
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // calendar section
             Row(
               children: [
                 Padding(
                   padding: EdgeInsets.all(15.0),
                   child: Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.start,
                     children: [
                       IconButton(
-                          onPressed: (){
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                  builder: (context) => CalendarPage()),
-                            );
-                          },
-                          icon: Icon(Icons.calendar_month)
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => CalendarPage(),
+                            ),
+                          );
+                        },
+                        icon: Icon(Icons.calendar_month),
                       ),
-                    ]),
+                    ],
+                  ),
                 ),
-                Text("Today",
+                Text(
+                  "Today",
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
               ],
@@ -628,16 +653,13 @@ class _HomePageState extends State<HomePage> {
                     minWidth: 200,
                     minHeight: 200,
                   ),
-                  child:
-                  SfCalendar(
+                  child: SfCalendar(
                     view: CalendarView.day,
                     dataSource: EventAppointmentDataSource(_appointments),
                     onTap: (details) {
                       if (details.targetElement == CalendarElement.appointment) {
                         return;
                       }
-                      // show events scheduled for that day
-                      //_eventsOfSelectedDay(details.date!);
                     },
                     monthViewSettings: const MonthViewSettings(
                       appointmentDisplayMode: MonthAppointmentDisplayMode.appointment,
@@ -646,103 +668,114 @@ class _HomePageState extends State<HomePage> {
                 ),
               ],
             ),
-            Padding(padding:
-            EdgeInsets.all(20.0),
+
+            // quotes section
+            Padding(
+              padding: EdgeInsets.all(20.0),
               child: Column(
                 children: [
                   _quotesWidgets(),
                   SizedBox(height: 30.0),
-                  Text("Tasks",
+                  Text(
+                    "Tasks",
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
-                  ]
+                ],
               ),
             ),
+
+            // tasks section
+            // add task button
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 Padding(
-                    padding:  EdgeInsets.all(5.0),
-                child: Row(
-                  children: [
-                    Text(
-                        "Tasks",
-                    style: TextStyle(fontSize: 15),
-                    ),
-                    IconButton(
-                        onPressed: () async{
-                          final bool? shouldRefresh = await  Navigator.of(context).push(
-                              MaterialPageRoute(
-                                  builder: (context) => TaskEventForm(isPersonalTask: true) )
+                  padding: EdgeInsets.all(5.0),
+                  child: Row(
+                    children: [
+                      Text(
+                        "Add Task",
+                        style: TextStyle(fontSize: 15),
+                      ),
+                      IconButton(
+                        onPressed: () async {
+                          final bool? shouldRefresh = await Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => TaskEventForm(isPersonalTask: true),
+                            ),
                           );
                           if (shouldRefresh != null) {
                             handleRefresh(shouldRefresh);
                           }
-
                         },
-                        icon: Icon(Icons.add_circle)
-                    ),
-
-                  ],
+                        icon: Icon(Icons.add_circle),
+                      ),
+                    ],
+                  ),
                 ),
-                )
               ],
             ),
             _segmentedButtonWidget(),
             SizedBox(height: 20.0),
             Text(_selectedPriority),
             _priorityDropdown(),
-            Text(AuthService().currentUser!.uid),
+
+            // list of tasks
             SizedBox(height: 20.0),
             Flexible(
-                child: tasks == null
-                    ? Center(child: CircularProgressIndicator())
-                    : tasks!.isEmpty
-                    ? Center(child: Text('No tasks available'))
-                    : _getTaskContainer()
+              child: tasks == null
+                  ? Center(child: CircularProgressIndicator())
+                  : tasks!.isEmpty
+                  ? Center(child: Text('No tasks available'))
+                  : _getTaskContainer(),
             ),
             SizedBox(height: 30.0),
-            Text("Events",
+
+            // events section
+            Text(
+              "Events",
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
+
+            // add event button
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 Padding(
                   padding: EdgeInsets.all(10.0),
-                child:
-                  Row(
-                  children: [
-                    Text(
-                        "Events",
+                  child: Row(
+                    children: [
+                      Text(
+                        "Add Event",
                         style: TextStyle(fontSize: 15),
-                    ),
-                    IconButton(
-                      onPressed: (){
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                              builder: (context) => CalendarEventForm()),
-                        );
-                      },
-                      icon: Icon(
-                        Icons.add_circle,
                       ),
-                    ),
-                  ],),
-                ),],
+                      IconButton(
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => CalendarEventForm(),
+                            ),
+                          );
+                        },
+                        icon: Icon(Icons.add_circle),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
+
+            // list of events
             Flexible(
-                child: events == null
-                    ? Center(child: CircularProgressIndicator())
-                    : events!.isEmpty
-                    ? Center(child: Text('No events available'))
-                    : _getEventsContainer()
-            )
+              child: events == null
+                  ? Center(child: CircularProgressIndicator())
+                  : events!.isEmpty
+                  ? Center(child: Text('No events available'))
+                  : _getEventsContainer(),
+            ),
           ],
         ),
       ),
-
     );
   }
 }
-

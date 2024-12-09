@@ -1,179 +1,171 @@
 import 'package:flutter/material.dart';
-import 'package:strive_project/services/event_service.dart';
-import 'package:table_calendar/table_calendar.dart';
-import 'package:syncfusion_flutter_calendar/calendar.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
+import 'package:syncfusion_flutter_calendar/calendar.dart';
+// services
+import 'package:strive_project/services/index.dart';
+// models
+import 'package:strive_project/models/index.dart';
+// pages
+import 'package:strive_project/pages/index.dart';
 
-//service
-import 'package:mystrive/services/index.dart';
-//model
-import 'package:mystrive/models/index.dart';
 
-class CalendarEventForm extends StatefulWidget {
-  //final bool isPersonalTask;
-  //final String? groupId; //optional
-  final Event? event;//optiona;
-
-  const CalendarEventForm({super.key, this.event});
+class CalendarPage extends StatefulWidget {
+  const CalendarPage({super.key});
 
   @override
-  State<CalendarEventForm> createState() => _CalendarEventFormState();
+  State<CalendarPage> createState() => _CalendarPageState();
 }
 
-class _CalendarEventFormState extends State<CalendarEventForm> {
-  //controllers
-  final TextEditingController titleController = TextEditingController();
-  final TextEditingController timePickerController = TextEditingController();
-  final TextEditingController descriptionController = TextEditingController();
-
-  DateTime _selectedDay = DateTime.now();
-  DateTime _focusedDay = DateTime.now();
-  String _priorityLevel = 'Low';
-
-  final EventService eventService = EventService();
-
+class _CalendarPageState extends State<CalendarPage> {
+  EventService eventService = EventService();
+  List<Event> events = [];  // Initialize as empty list instead of nullable
+  List<Appointment> _appointments = [];  // Initialize as empty list instead of nullable
+  bool isLoading = true;
+  DateTime selectedDate = DateTime.now();
+  CalendarView currentView = CalendarView.week;
 
   @override
   void initState() {
-    if (widget.event != null) {
-      titleController.text = widget.event!.title;
-      timePickerController.text = widget.event!.time ?? '';
-      descriptionController.text = widget.event!.description;
-      // Set the selected day based on the task's date (if available)
-      if (widget.event!.date != null && widget.event!.date!.isNotEmpty) {
-
-        _selectedDay = DateFormat("yyyy-MM-dd").parse(widget.event!.date!);
-        _focusedDay = _selectedDay;
-      }
-    }
-  } //add task
-  Future<bool> addEvent() async {
-    final int numOfTasks = (await eventService.getEvents()).length;
-//_showSnackBar(context, numOfTasks.toString());
-    //  _showSnackBar(context,widget.groupId!);
-    final String id = 'task_${numOfTasks + 1}';
-    final String formattedDate = DateFormat("yyyy-MM-dd").format(_selectedDay);
-
-    final Event newEvent = Event(
-      id: id,
-      title: titleController.text,
-      priorityLevel: _priorityLevel,
-      description: descriptionController.text,
-      date: formattedDate,
-      time: timePickerController.text,
-      status: false,
-    );
-
-    // Add to Firestore using TaskService
-    return await eventService.addEvent(newEvent);
+    super.initState();
+    _fetchEvent();
   }
 
-  Future<bool> editEvent() async {
-    try{
+  Future<void> _fetchEvent() async {
+    eventService.setCalendarUpdateCallback((appointments) {
+      setState(() {
+        _appointments = appointments;
+      });
+    });
 
-      final String formattedDate = DateFormat("yyyy-MM-dd").format(_selectedDay);
-
-      Event updatedEvent = Event(
-          id: widget.event!.id,
-          title: titleController.text,
-          priorityLevel:_priorityLevel,
-          date: formattedDate,
-          time: timePickerController.text,
-          description: descriptionController.text,
-          status: widget.event!.status
-      );
-
-      return  await eventService.editEvent(updatedEvent);
-    }catch (e){
-      _showSnackBar(context, "Edit fail");
-      print("Error editing task: $e");
-      return false;
-
+    try {
+      // load events from firestore
+      List<Event> eventData = await eventService.getEvents();
+      setState(() {
+        events = eventData;  // Now this will never be null
+        _appointments = eventData.map((e) => e.toAppointment()).toList();
+        isLoading = false;
+      });
+    } catch (e) {
+      _showSnackBar(context, 'Error fetching events: $e');
+      setState(() {
+        isLoading = false;
+      });
     }
-
   }
 
-  void _showSnackBar(BuildContext context, String message){
+  void _showSnackBar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          duration: Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: Colors.black54,
-        )
-    );
-  }
-
-  String buttonLabel(){
-    //if( widget.isPersonalTask){
-      if(widget.event == null){
-        return 'Add Event';
-      }else{
-        return 'Edit Event';
-      }
-    /*}else{
-      if(widget.event == null){
-        return 'Add Group Task';
-      }else{
-        return 'Edit Group Task';
-      }
-    }*/
-
-  }
-
-  //widget
-  Widget _entryField(String title, TextEditingController controller,
-      {bool isPassword = false}) {
-    return TextField(
-      controller: controller,
-      obscureText: isPassword,
-      decoration: InputDecoration(
-        labelText: title,
+      SnackBar(
+        content: Text(message),
+        duration: Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.black54,
       ),
     );
   }
 
-  Widget _dropDown() {
-    final validPriorities = ['High', 'Mid', 'Low'];
+  List<Event> _getEventsForSelectedDate() {
+    DateTime formattedSelectedDate = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
 
-    String priorityLevel = validPriorities.contains(widget.event?.priorityLevel)
-        ? widget.event!.priorityLevel // Safe because we just checked it exists in validPriorities
-        : 'Low';
-
-    return DropdownButtonFormField<String>(
-      value: priorityLevel,
-      items: [
-        DropdownMenuItem(value: 'High', child: Text('High')),
-        DropdownMenuItem(value: 'Mid', child: Text('Mid')),
-        DropdownMenuItem(value: 'Low', child: Text('Low')),
-      ],
-      onChanged: (value) {
-        setState(() {
-          _priorityLevel = value!;
-        });
-      },
-      decoration: InputDecoration(labelText: "Priority Level"),
-    );
+    return events.where((event) {
+      DateTime eventDate = DateFormat("yyyy-MM-dd").parse(event.date);
+      DateTime formattedEventDate = DateTime(eventDate.year, eventDate.month, eventDate.day);
+      return formattedEventDate.isAtSameMomentAs(formattedSelectedDate);
+    }).toList();
   }
 
-  Widget _timePicker() {
-    return TextField(
-      controller: timePickerController,
-      decoration: InputDecoration(
-        label: Text('Pick Time' ),
-      ),
-      readOnly: true,
-      onTap: () async {
-        final time = await showTimePicker(
-          context: context,
-          initialTime: TimeOfDay.now(),
+  // edit event
+  void eventEdit(Event event) async{
+    final bool? shouldRefresh = await Navigator.of(context).push(
+        MaterialPageRoute(
+            builder: (context) => CalendarEventForm(event: event))
+    );
+    if(shouldRefresh != null){
+      handleRefresh(shouldRefresh);
+    }
+  }
+
+  void handleRefresh(bool result){
+    print("Should refresh: $result");
+    if (result == true) {
+      setState(() {
+        _fetchEvent();
+      });
+    }
+  }
+
+  Widget _getEventsContainer() {
+    if (isLoading) {
+      return Center(child: CircularProgressIndicator());
+    }
+
+    if (events.isEmpty) {
+      return Center(child: Text('No events available.'));
+    }
+
+    List<Event> selectedDayEvents = _getEventsForSelectedDate();
+
+    return ListView.builder(
+      shrinkWrap: true,
+      padding: EdgeInsets.all(10),
+      itemCount: selectedDayEvents.length,
+      itemBuilder: (BuildContext context, int index) {
+        return Slidable(
+          endActionPane: ActionPane(
+            motion: DrawerMotion(),
+            children: [
+              SlidableAction(
+                onPressed: (BuildContext context) async {
+                  try {
+                    await eventService.deleteEvent(selectedDayEvents[index].id);
+                    setState(() {
+                      events.removeWhere((event) => event.id == selectedDayEvents[index].id);
+                      _appointments = events.map((e) => e.toAppointment()).toList();
+                    });
+                    _showSnackBar(context, 'Event deleted');
+                  } catch (e) {
+                    _showSnackBar(context, 'Error deleting event: $e');
+                  }
+                },
+                icon: Icons.delete,
+                label: 'Delete',
+                backgroundColor: Colors.redAccent,
+                foregroundColor: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              SlidableAction(
+                onPressed: (BuildContext context) async {
+                  eventEdit(selectedDayEvents[index]);
+                },
+                icon: Icons.edit,
+                label: 'Edit',
+                backgroundColor: Colors.blueGrey,
+                foregroundColor: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ],
+          ),
+          child: Container(
+            margin: EdgeInsets.symmetric(vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.black12,
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: ListTile(
+              title: Text(
+                selectedDayEvents[index].title,
+                style: TextStyle(
+                  fontSize: 18,
+                  decoration: selectedDayEvents[index].status
+                      ? TextDecoration.lineThrough
+                      : TextDecoration.none,
+                ),
+              ),
+              subtitle: Text("Date: ${selectedDayEvents[index].date}"),
+            ),
+          ),
         );
-
-        if (time != null) {
-          setState(() {
-            timePickerController.text = time.format(context);
-          });
-        }
       },
     );
   }
@@ -182,73 +174,97 @@ class _CalendarEventFormState extends State<CalendarEventForm> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title:
-        Text(buttonLabel()),
-      ),
-      body: Container(
-        margin: EdgeInsets.all(15),
-        padding: EdgeInsets.all(12),
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              _entryField("Enter Title:", titleController),
-              SizedBox(height: 10),
-              _dropDown(),
-              TableCalendar(
-                firstDay: DateTime.now(),
-                lastDay: DateTime.utc(DateTime.now().year,
-                    DateTime.now().month + 1, 0), // Next month
-                focusedDay: _focusedDay,
-                selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-                onDaySelected: (selectedDay, focusDay) {
-                  setState(() {
-                    _selectedDay = selectedDay;
-                    _focusedDay = focusDay;
-                  });
-                },
-              ),
-              Text(
-                widget.event?.date != null && widget.event?.date!.isNotEmpty == true
-                    ? "Selected: ${widget.event!.date}"
-                    : "No date selected", // Fallback message when no date is selected
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              _timePicker(),
-              _entryField("Enter Desciption:" , descriptionController),
-              ElevatedButton(
-                onPressed: () async {
-                  if (titleController.text.isEmpty ) {
-                    _showSnackBar(context, "Title is empty");
-                    return;
-                  }
-
-                  if(titleController.text.isEmpty || descriptionController.text.isEmpty || timePickerController.text.isEmpty){
-                    _showSnackBar(context, "Please fill out all fields");
-                    return;
-                  }else{
-                    final bool result;
-                    if(widget.event == null){
-                      result = await addEvent();
-                    }else{
-                      result = await editEvent();
-                    }
-
-                    if (result) {
-                      Navigator.of(context).pop();
-                    } else {
-                      widget.event == null ?
-                      _showSnackBar(context, "Failed to add event")
-                          :
-                      _showSnackBar(context, "Failed to edit event") ;
-
-                    }
-                  }
-
-                },
-                child: Text(buttonLabel()),
-              ),
-            ],
+        title: Text("Calendar"),
+        actions: [
+          IconButton(
+            onPressed: () {
+              setState(() {
+                currentView = currentView == CalendarView.month
+                    ? CalendarView.week
+                    : CalendarView.month;
+              });
+            },
+            icon: Icon(currentView == CalendarView.month ? Icons.view_week : Icons.view_day),
           ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Container(
+                  child: Builder(
+                      builder: (context) {
+                        return SfCalendar(
+                          view: currentView,
+                          dataSource: EventAppointmentDataSource(_appointments),
+                          onTap: (details) {
+                            if (details.targetElement == CalendarElement.appointment) {
+                              return;
+                            }
+                            setState(() {
+                              selectedDate = details.date!;
+                            });
+                          },
+                          monthViewSettings: const MonthViewSettings(
+                            appointmentDisplayMode: MonthAppointmentDisplayMode.appointment,
+                          ),
+                        );
+                      }
+                  ),
+                ),
+                /*Row(
+                  children: [
+                    Text(
+                      "Events",
+                      style: TextStyle(fontSize: 15),
+                    ),
+                    IconButton(
+                      onPressed: (){
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                              builder: (context) => CalendarEventForm()),
+                        );
+                      },
+                      icon: Icon(
+                        Icons.add_circle,
+                      ),
+                    ),
+                  ],
+                ),*/
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Padding(
+                  padding: EdgeInsets.all(10.0),
+                  child:
+                  Row(
+                    children: [
+                      Text(
+                        "Add Event",
+                        style: TextStyle(fontSize: 15),
+                      ),
+                      IconButton(
+                        onPressed: (){
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                                builder: (context) => CalendarEventForm()),
+                          );
+                        },
+                        icon: Icon(
+                          Icons.add_circle,
+                        ),
+                      ),
+                    ],),
+                ),],
+            ),
+            SizedBox(height: 20.0),
+            _getEventsContainer()
+          ],
         ),
       ),
     );

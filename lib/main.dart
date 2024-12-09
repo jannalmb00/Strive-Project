@@ -13,36 +13,17 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primaryColor:  Color(0xFFF6E4E4),
-        scaffoldBackgroundColor: Colors.white,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor:  Color(0xFFF6E4E4),
-          secondary:  Color(0xFFFADADD),
-        ),
-        buttonTheme: ButtonThemeData(
-          buttonColor:  Colors.deepPurpleAccent,
-          textTheme: ButtonTextTheme.primary,
-        ),
-        appBarTheme:  AppBarTheme(
-          backgroundColor: Colors.white, // AppBar background color
-          iconTheme: IconThemeData(color: Colors.black), // Icon color in AppBar
-        ),
-        bottomNavigationBarTheme:  BottomNavigationBarThemeData(
-          backgroundColor: Color(0xFFF8C9D4) , // BottomNavigationBar background color
-          selectedItemColor: Colors.deepPurpleAccent, // Selected icon color
-          unselectedItemColor: Colors.black54, // Unselected icon color
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.deepPurpleAccent,
-            foregroundColor: Colors.white,
-          ),
-        ),
+    return ChangeNotifierProvider(
+      create: (context) => ThemeService(ThemeData.light()), // default light theme
+      child: Consumer<ThemeService>(
+        builder: (context, themeService, child) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            theme: themeService.getTheme,
+            home: WidgetTree(),
+          );
+        },
       ),
-      home: WidgetTree(),
     );
   }
 }

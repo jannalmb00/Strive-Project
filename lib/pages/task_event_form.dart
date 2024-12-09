@@ -228,6 +228,7 @@ class _TaskEventFormState extends State<TaskEventForm> {
               ),
               _timePicker(),
               _entryField("Enter Desciption:" , descriptionController),
+              SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () async {
                   if (titleController.text.isEmpty ) {
