@@ -5,9 +5,9 @@ import 'package:syncfusion_flutter_calendar/calendar.dart';  // api calendar
 class Event {
   String id;
   String title;
-  String priorityLevel; // Can be 'Low', 'Medium', or 'High'
-  String date;          // Required field
-  String time;          // Required field (time should be in the format "hh:mm a" or "HH:mm")
+  String priorityLevel;
+  String date;
+  String time;
   String description;
   bool status;
 

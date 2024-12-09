@@ -12,6 +12,8 @@ import 'package:strive_project/services/index.dart';
 //page
 import 'package:strive_project/pages/index.dart';
 
+import 'package:strive_project/widget_tree.dart';
+
 class AccountPage extends StatefulWidget {
   const AccountPage({super.key});
 
@@ -24,10 +26,6 @@ class _AccountPageState extends State<AccountPage> {
   String? userName;
   String? schoolName;
   bool isLoading = true;
-  final TextEditingController _idController = TextEditingController();
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _schoolNameController = TextEditingController();
 
   @override
   void initState() {
@@ -83,7 +81,8 @@ class _AccountPageState extends State<AccountPage> {
 
   Future<void> signOut() async {
     await AuthService().signOut();
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => LoginRegisterPage()));
+
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => WidgetTree()));
   }
 
   @override
@@ -121,7 +120,7 @@ class _AccountPageState extends State<AccountPage> {
                       );
                     }).toList(),
                     onChanged: (String? newValue) {
-                      if (newValue != null) { // change theme depending on selected value
+                      if (newValue != null) {
                         Provider.of<ThemeService>(context, listen: false)
                             .setTheme(newValue);
                       }

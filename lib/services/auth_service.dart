@@ -1,8 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:strive_project/services/index.dart';
 //model
 import 'package:strive_project/models/index.dart';
 
@@ -158,6 +160,40 @@ class AuthService{
       print('Error storing email: $e');
     }
   }
+
+  Future<bool> addStreak(String email) async {
+    try {
+      // Query the collection to check if the email exists
+      var userDoc = await FirebaseFirestore.instance
+          .collection('userEmails')
+          .where('email', isEqualTo: email)  // Check for email field in the collection
+          .limit(1)  // Limit to 1 document
+          .get();
+
+      if (userDoc.docs.isEmpty) {
+        print("Email not found in the collection.");
+        return false;  // Email not found, return false
+      }
+
+      // If email exists, update the streakNumber
+      await FirebaseFirestore.instance
+          .collection('userEmails')
+          .doc(userDoc.docs.first.id)  // Get the document ID from the query result
+          .update({
+        'streakNumber': FieldValue.increment(1),
+      });
+
+      await NotificationService.sendStreakNotification();
+
+      print("Streak number updated successfully.");
+      return true;
+    } catch (e) {
+      print("Error updating streak number: $e");
+      return false;
+    }
+  }
+
+
 
   Future<void> addFriend(String email) async{
     try{

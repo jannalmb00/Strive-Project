@@ -4,21 +4,24 @@ class GroupModel{
   final String groupName;
   final String groupDescription;
   final String groupFileName;
+  final String ownerEmail;
   final List<String> members;
 
   GroupModel({ required this.groupID,
               required this.groupName,
               required this.groupDescription,
               required this.groupFileName,
+              required this.ownerEmail,
               required this.members});
 //firestore data to object to ah
   factory GroupModel.fromfireStore(Map<String, dynamic> firestoreData) {
     return GroupModel(
-      groupID: firestoreData['groupID'] ?? '',  // Default empty string if null
+      groupID: firestoreData['groupID'] ?? '',
       groupName: firestoreData['groupName'] ?? 'Unnamed Group',  // Default value
       groupDescription: firestoreData['groupDescription'] ?? 'No Description',  // Default value
       groupFileName: firestoreData['groupFileName'],
-      members: List<String>.from(firestoreData['members'] ?? []),  // Default empty list if null
+      ownerEmail: firestoreData['ownerEmail'],
+      members: List<String>.from(firestoreData['members'] ?? []),
     );
   }
 
@@ -29,6 +32,7 @@ class GroupModel{
       'groupName': groupName,
       'groupDescription': groupDescription,
       'groupFileName': groupFileName,
+      'ownerEmail': ownerEmail,
       'members': members
     };
   }

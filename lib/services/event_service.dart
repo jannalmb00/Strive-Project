@@ -32,7 +32,7 @@ class EventService{
       if (onEventsUpdated != null) {
         List<Event> allEvents = await getEvents();
         List<Appointment> allAppointments = allEvents.map((e) => e.toAppointment()).toList();
-        onEventsUpdated!(allAppointments);  // update the api calendar
+        onEventsUpdated!(allAppointments);
       }
       return  true;
     }catch(e){

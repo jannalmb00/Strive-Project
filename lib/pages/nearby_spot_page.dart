@@ -237,6 +237,7 @@ class _NearbySpotPageState extends State<NearbySpotPage> {
   void viewPlace(Map<String, dynamic> place) async{
 
 
+
     showModalBottomSheet(
         context: context,
         builder:  (BuildContext context) {

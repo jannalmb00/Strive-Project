@@ -91,7 +91,7 @@ class QuotesService{
             // Return a map with the selected quote data
             return {
               'quoteText': filteredQuotes[randomIndex]['q'],
-              'author': filteredQuotes[randomIndex]['a'], // Assuming the author field is 'a'
+              'author': filteredQuotes[randomIndex]['a'],
             };
           }
         }

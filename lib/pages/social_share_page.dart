@@ -184,6 +184,15 @@ class _SocialSharePageState extends State<SocialSharePage> {
       },
     );
   }
+
+  bool isOwner(GroupModel group){
+    if(group.ownerEmail == AuthService().currentUser!.email){
+      return true;
+    }else{
+      return false;
+    }
+
+  }
   //widget
   Widget _displayGroups() {
     return userGroups.isEmpty
@@ -223,7 +232,9 @@ class _SocialSharePageState extends State<SocialSharePage> {
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    SizedBox(height: 12),
+                    if (isOwner(group))
+                      SizedBox(height: 12),
+                    if (isOwner(group))
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -266,7 +277,11 @@ class _SocialSharePageState extends State<SocialSharePage> {
             child: Center(
               child: Column(
                 children: [
-                  Text("Hi, your streak number is: ${snapshot.data}"),
+                  Text("Hi, your streak number is: ${snapshot.data} 🎉",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900
+                  ),),
                 ],
               ),
             ),

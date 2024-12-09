@@ -234,7 +234,7 @@ class _CalendarEventFormState extends State<CalendarEventForm> {
                     }
 
                     if (result) {
-                      Navigator.of(context).pop();
+                      Navigator.of(context).pop(result);
                     } else {
                       widget.event == null ?
                       _showSnackBar(context, "Failed to add event")

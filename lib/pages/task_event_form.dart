@@ -208,9 +208,9 @@ class _TaskEventFormState extends State<TaskEventForm> {
                 focusedDay: _focusedDay,
                 selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
                 onDaySelected: (selectedDay, focusDay) {
-                  // Prevent selecting past dates
+
                   if (selectedDay.isBefore(DateTime.now())) {
-                    // Default to today if a past date is selected
+
                     selectedDay = DateTime.now();
                   }
 

@@ -34,7 +34,7 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
 
   Future<void> createUserWithEmailAndPassword(BuildContext context) async {
     try {
-      bool authnCreate = await AuthService().createUser(  // Corrected typo here
+      bool authnCreate = await AuthService().createUser( // Corrected typo here
         context: context,
         email: _emailController.text,
         password: _passwordController.text,
@@ -49,10 +49,19 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
 
   // Widgets
   Widget _title() {
-    return isLogin ? Text('Login') : Text('Register');
+    return Text(
+      isLogin ? 'Login' : 'Register',
+      style: TextStyle(
+        fontSize: 32,
+        fontWeight: FontWeight.bold,
+        color: Colors.deepPurpleAccent,
+
+      ),
+      textAlign: TextAlign.center, // Center-align for symmetry
+    );
   }
 
-  Widget _entryField(String title, TextEditingController controller,  {bool isPassword = false}) {
+  Widget _entryField(String title, TextEditingController controller, {bool isPassword = false}) {
     return TextField(
       controller: controller,
       obscureText: isPassword,
@@ -69,15 +78,16 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
   Widget _submitButton() {
     return ElevatedButton(
       onPressed: (){
-      if(isLogin){
-        signInWithEmailAndPassword(context);
-      }else{
-        createUserWithEmailAndPassword(context);
-      }
+        print(isLogin);
+        if(isLogin){
+          signInWithEmailAndPassword(context);
+        }else{
+          createUserWithEmailAndPassword(context);
+        }
 
-    },
+      },
       child: Text(isLogin ? 'Login' : 'Register'),
-    );  // Added missing semicolon
+    ); // Added missing semicolon
   }
 
   Widget _loginOrRegisterButton() {
@@ -98,10 +108,10 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
         }));
       },
       child: Text('Forgot password',
-      style: TextStyle(
-        color: Colors.indigoAccent,
-        fontWeight: FontWeight.bold
-      ),),
+        style: TextStyle(
+            color: Colors.indigoAccent,
+            fontWeight: FontWeight.bold
+        ),),
     );
   }
 
@@ -126,6 +136,7 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
         height: double.infinity,
         width: double.infinity,
         padding: const EdgeInsets.all(20),
+        color: isLogin ?Colors.white : Colors.blueGrey.shade50 ,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,

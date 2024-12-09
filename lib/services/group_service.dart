@@ -39,7 +39,7 @@ class GroupService{
       }
     }
 
-  Future<bool> createGroup(String groupName, String description,String groupFileName, List<String> members) async {
+  Future<bool> createGroup(String groupName, String description,String groupFileName,String ownerEmail, List<String> members) async {
     try {
       if (currentUser == null) {
         return false; // User not signed in
@@ -58,7 +58,7 @@ class GroupService{
 
       String customGroupId = '${currentUser!.email}-${groupName.replaceAll(' ', '-')}.${randomInt.toString()}';
       
-      GroupModel newGroup = GroupModel(groupID: customGroupId, groupName: groupName, groupDescription: description, groupFileName: groupFileName, members: members);
+      GroupModel newGroup = GroupModel(groupID: customGroupId, groupName: groupName, groupDescription: description, groupFileName: groupFileName,ownerEmail: ownerEmail, members: members);
 
       // Create the group with a custom ID
       await _firestore.collection('groups').doc(customGroupId).set(newGroup.toMap());

@@ -5,3 +5,4 @@ export 'quotes_service.dart';
 export 'task_service.dart';
 export 'event_service.dart';
 export 'theme_service.dart';
+export 'notification_service.dart';

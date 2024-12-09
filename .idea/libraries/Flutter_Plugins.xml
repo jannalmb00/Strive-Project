@@ -46,6 +46,10 @@
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/shared_preferences_android-2.3.4" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/shared_preferences-2.3.3" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/rive_common-0.4.15" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/onesignal_flutter-5.2.8" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/flutter_local_notifications_linux-4.0.1" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/flutter_local_notifications-17.2.4" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/permission_handler-10.4.5" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

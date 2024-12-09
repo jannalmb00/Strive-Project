@@ -9,6 +9,7 @@ import 'package:strive_project/pages/index.dart';
 import 'package:strive_project/services/index.dart';
 //model
 import 'package:strive_project/models/index.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -341,11 +342,25 @@ class _HomePageState extends State<HomePage> {
                     child:  ListTile(
                       leading: Checkbox(
                         value: incompleteTasks[index].status,
-                        onChanged: (bool? val) {
+                        onChanged: (bool? val) async {
                           setState(() {
                             incompleteTasks[index].status = val ?? false;
+
                             taskService.editPersonalTask(incompleteTasks[index]);
                           });
+
+                          if(user!.email != null){
+                            bool result = await AuthService().addStreak(user!.email!);
+                            if (result) {
+                              await taskService.editPersonalTask(incompleteTasks[index]);
+                              _showSnackBar(context, "Yay! You've leveled up your streak points! Keep it going!");
+                            } else {
+                              // Optionally handle the case where streak increment failed
+                              _showSnackBar(context, "Oops! Something went wrong. Let's try again!");
+                              print("Error updating streak number. Task not updated.");
+                            }
+
+                          }
                         },
                         fillColor: MaterialStateProperty.all(Colors.white),
                       ),
@@ -475,7 +490,7 @@ class _HomePageState extends State<HomePage> {
           print("Now: $now");
           print("Status: ${ task.status == false}");
 
-          if (taskDateTimeToday.isBefore(now) &&task.status == false) {
+          if (!isSameDay(taskDateTimeToday, now) && taskDateTimeToday.isBefore(now) && task.status == false) {
             return (_selectedPriority == 'All') || (task.priorityLevel == _selectedPriority || task.status == false);
           } else {
             return false; // Task time is after now
@@ -712,7 +727,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Welcome, $userName !"),
+        title: Text("Welcome, $userName !", style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600) ,),
       ),
       body: SingleChildScrollView(
         child: Column(

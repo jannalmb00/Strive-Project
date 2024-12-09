@@ -69,7 +69,7 @@ class _CreateGroupFormPageState extends State<CreateGroupFormPage> {
       }
       membersEmail.add(userEmail);
 
-      bool result = await groupservice.createGroup(groupNameController.text, groupDescriptionController.text,fileNameController.text, membersEmail);
+      bool result = await groupservice.createGroup(groupNameController.text, groupDescriptionController.text,fileNameController.text,userEmail, membersEmail);
 
       if(result){
         _showSnackBar(context, 'Group is created successfully');
@@ -87,9 +87,10 @@ class _CreateGroupFormPageState extends State<CreateGroupFormPage> {
   }
 
   void editGroup() async{
+    String ownerEmail = AuthService().currentUser!.email ?? "default@example.com";;
     if( groupNameController.text.isNotEmpty && groupDescriptionController.text.isNotEmpty && membersEmail.isNotEmpty && fileNameController.text.isNotEmpty){
       GroupModel editGroup = GroupModel(groupID: widget.group!.groupID, groupName:widget.group!.groupName ,
-          groupDescription: groupDescriptionController.text, groupFileName: widget.group!.groupFileName , members: membersEmail);
+          groupDescription: groupDescriptionController.text, groupFileName: widget.group!.groupFileName ,ownerEmail: ownerEmail, members: membersEmail);
 print("good");
       List<String> existingMembers = widget.group?.members ?? [];
       List<String> newMembers = membersEmail
@@ -164,9 +165,9 @@ print("good");
           margin: EdgeInsets.all(15),
           child: Column(
             children: [
-              _entryField("Enter group name", groupNameController, canEdit: false),
+              _entryField("Enter group name", groupNameController,canEdit: widget.group == null ),
               _entryField("Enter Description", groupDescriptionController),
-              _entryField("Enter group file name", fileNameController,canEdit: false),
+              _entryField("Enter group file name", fileNameController,canEdit: widget.group == null),
               SizedBox(height: 10,),
               Text('Press icon to add your friend'),
               Row(
